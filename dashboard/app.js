@@ -71,6 +71,9 @@
     mapLiveEta: document.getElementById('map-live-eta'),
     emergencyRoutePath: document.getElementById('emergency-route-path'),
     liveAmbulanceMarker: document.getElementById('live-ambulance-marker'),
+    inboundFeedList: document.getElementById('inbound-feed-list'),
+    feedIncidentCount: document.getElementById('feed-incident-count'),
+    claimsQueueList: document.querySelector('.finance-layout .feed-scroll-container'),
 
     // Hospital Dock
     btnReserveBay: document.getElementById('btn-reserve-bay'),
@@ -125,6 +128,7 @@
     initWaveformCanvas();
     startEtaTimer();
     updateAmbulancePosition();
+    initSocket();
   }
 
   // --- NAVIGATION & DEMO PILL SWITCHER ---
@@ -260,38 +264,291 @@
     }
   }
 
-  // --- CRASH SIMULATION TRIGGER ---
-  function triggerCollisionSimulation() {
-    state.sharedPatient.etaSeconds = 360; // 6 mins
-    state.ambulanceProgress = 0.15;
-    state.traumaBayReserved = false;
-    state.bloodBankAlerted = false;
-    updateBayButtonState();
-    updateBloodButtonState();
+  // --- REAL-TIME WEBSOCKET (SOCKET.IO) CLIENT ---
+  let socket = null;
+  let activeIncidentCount = 3;
 
-    playCollisionAlertSound();
+  function initSocket() {
+    if (typeof io === 'undefined') {
+      console.warn('[AegisLink] Socket.IO client library not loaded. Retrying in 1s...');
+      setTimeout(initSocket, 1000);
+      return;
+    }
 
-    // Show and flash alert banner
+    try {
+      // Connect to backend: if served from flask on port 5000, connect to origin;
+      // if served from port 3000, 8000, or file://, connect to http://localhost:5000
+      const serverUrl =
+        window.location.protocol.startsWith('http') && window.location.port === '5000'
+          ? undefined
+          : 'http://localhost:5000';
+
+      socket = io(serverUrl, {
+        reconnectionAttempts: 20,
+        reconnectionDelay: 1000,
+        timeout: 5000,
+        transports: ['websocket', 'polling']
+      });
+
+      socket.on('connect', () => {
+        console.log('⚡ [AegisLink] Connected to Python Socket.IO Real-Time Backend (SID: ' + socket.id + ')');
+        showToast('⚡ Connected to AegisLink Telematics Real-Time Backend');
+      });
+
+      socket.on('connection_ack', (data) => {
+        console.log('⚡ [AegisLink] Server ACK:', data);
+      });
+
+      // LISTEN FOR crash_alert WEBSOCKET EVENT
+      socket.on('crash_alert', (payload) => {
+        console.log('🚨 [AegisLink] Received crash_alert WebSocket event:', payload);
+        handleIncomingCrashAlert(payload);
+      });
+
+      socket.on('disconnect', () => {
+        console.log('🔌 [AegisLink] Disconnected from Real-Time Backend');
+      });
+
+      socket.on('connect_error', (err) => {
+        console.log('⚠️ [AegisLink] Socket.IO connection attempt:', err.message);
+      });
+    } catch (err) {
+      console.error('[AegisLink] Error initializing Socket.IO client:', err);
+    }
+  }
+
+  // --- DYNAMIC DOM MANIPULATION FOR CRASH ALERT ---
+  function handleIncomingCrashAlert(data) {
+    if (!data) return;
+
+    const riderId = data.rider_id || 'UNKNOWN';
+    const lat = data.latitude !== undefined ? Number(data.latitude).toFixed(4) : '12.8912';
+    const lon = data.longitude !== undefined ? Number(data.longitude).toFixed(4) : '80.0813';
+    const kinematics = data.kinematics_payload || {};
+    const peakG = kinematics.peak_g || data.peak_g || 9.2;
+    const tilt = kinematics.tilt_angle || data.tilt_angle || 74;
+    const speed = kinematics.pre_speed_kmh || data.pre_speed_kmh || 52;
+    const incidentId = data.incident_id || `#CR-${Math.floor(8822 + Math.random() * 1000)}`;
+    const riderName = data.rider_name || `Rider #${riderId}`;
+    const fleet = data.fleet || 'Zomato Partner';
+    const claimStatus = data.claim_status || 'ACKO Pre-Approved Incident';
+    const protocolCode = data.protocol_code || `AL-ESP32-${String(riderId).replace(/[^a-zA-Z0-9]/g, '')}`;
+    const ambStatus = data.ambulance_status || 'Ambulance Dispatched (108 Unit)';
+    const etaMins = data.eta_minutes || 6;
+    const timestamp = data.timestamp || 'Just now';
+    const locationName = data.location_name || `GST Corridor (${lat}° N, ${lon}° E)`;
+
+    // 1. Construct the new 'CRITICAL // NEW COLLISION' incident card DOM Element
+    const card = document.createElement('article');
+    card.className = 'incident-card active-incident flash-pulse';
+    card.id = `card-${incidentId.replace(/[^a-zA-Z0-9]/g, '')}`;
+
+    card.innerHTML = `
+      <div class="card-top-row">
+        <div class="patient-title-group">
+          <h3 class="patient-name">${riderName}</h3>
+          <span class="fleet-tag zomato">${fleet}</span>
+        </div>
+        <span class="time-ago-tag">${timestamp}</span>
+      </div>
+
+      <!-- Parametric Claim Status -->
+      <div class="claim-status-row">
+        <span class="acko-shield-icon">🛡️</span>
+        <span class="claim-text">${claimStatus} <strong>${incidentId}</strong></span>
+        <span class="zero-touch-tag">Zero-Touch Cashless</span>
+      </div>
+
+      <!-- Location & Hardware Protocol Pill -->
+      <div class="location-row">
+        <span class="loc-pin">📍</span>
+        <span class="loc-text">${locationName} • GPS: ${lat}° N, ${lon}° E</span>
+      </div>
+
+      <div class="protocol-code-row">
+        <button class="protocol-pill-btn" id="btn-proto-${incidentId.replace(/[^a-zA-Z0-9]/g, '')}" title="Click to view Vehicle & ESP32 Black-Box Hardware Drawer">
+          <span class="link-icon">🔗</span>
+          <span class="code-text">${protocolCode}</span>
+          <span class="tag-hint">Inspect Hardware →</span>
+        </button>
+      </div>
+
+      <!-- Ambulance Status & Live ETA -->
+      <div class="card-status-grid">
+        <div class="status-col">
+          <div class="label">AMBULANCE STATUS</div>
+          <div class="ambulance-pill dispatched">
+            <span class="amb-icon">🚑</span>
+            <span>${ambStatus}</span>
+          </div>
+        </div>
+        <div class="status-col eta-col">
+          <div class="label">LIVE ARRIVAL COUNTDOWN</div>
+          <div class="eta-countdown-badge">
+            <span class="eta-timer">0${etaMins}:00</span>
+            <span class="eta-km">(3.2 km away)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Severity Indicator -->
+      <div class="severity-footer critical">
+        <div class="sev-badge">CRITICAL // NEW COLLISION</div>
+        <div class="sev-metric">${peakG}G Peak Impact • Rider: ${riderId} • (${lat}° N, ${lon}° E)</div>
+      </div>
+    `;
+
+    // 2. Prepend to the top of Left Panel (Inbound Feed) container completely without page refresh!
+    const feedContainer = el.inboundFeedList || document.getElementById('inbound-feed-list');
+    if (feedContainer) {
+      feedContainer.prepend(card);
+    }
+
+    // Wire the protocol pill button to open Vehicle Detail Drawer
+    const protoBtn = card.querySelector('.protocol-pill-btn');
+    if (protoBtn) {
+      protoBtn.addEventListener('click', () => {
+        openVehicleDrawer();
+      });
+    }
+
+    // 3. Remove flash pulse animation after 4 seconds
+    setTimeout(() => {
+      card.classList.remove('flash-pulse');
+    }, 4000);
+
+    // 4. Update the Active Inbound Count badge
+    activeIncidentCount += 1;
+    const badgeCount = el.feedIncidentCount || document.getElementById('feed-incident-count');
+    if (badgeCount) {
+      badgeCount.textContent = `${activeIncidentCount} Active`;
+    }
+
+    // 5. Trigger audio-visual alert banner with real-time info
     if (el.criticalAlertBanner) {
       el.criticalAlertBanner.classList.remove('hidden');
       el.criticalAlertBanner.classList.add('flash-pulse');
+      const headline = el.criticalAlertBanner.querySelector('.alert-headline');
+      const desc = el.criticalAlertBanner.querySelector('.alert-desc');
+      if (headline) headline.textContent = `CRITICAL // NEW COLLISION: RIDER ${riderId}`;
+      if (desc) desc.textContent = `ESP32 ${peakG}G Decel Spike at (${lat}° N, ${lon}° E) • Auto-FNOL Verified`;
     }
 
-    // Flash incident card
-    const card = document.getElementById('card-cr-8821');
-    if (card) {
-      card.classList.add('flash-pulse');
-      setTimeout(() => card.classList.remove('flash-pulse'), 3000);
+    // 6. Play collision alarm chime
+    playCollisionAlertSound();
+
+    // 7. Reset live ETA & ambulance marker on map
+    state.sharedPatient.etaSeconds = etaMins * 60;
+    state.ambulanceProgress = 0.12;
+    updateAmbulancePosition();
+
+    // 8. Also dynamically prepend to Finance Claims Queue if present
+    const claimsQueue = el.claimsQueueList || document.querySelector('.finance-layout .feed-scroll-container');
+    if (claimsQueue) {
+      const financeCard = document.createElement('article');
+      financeCard.className = 'incident-card active-incident finance-card flash-pulse';
+      financeCard.innerHTML = `
+        <div class="card-top-row">
+          <div class="patient-title-group">
+            <h3 class="patient-name">${riderName}</h3>
+            <span class="fleet-tag zomato">${fleet}</span>
+          </div>
+          <span class="time-ago-tag">${timestamp}</span>
+        </div>
+        <div class="protocol-code-row">
+          <button class="protocol-pill-btn finance-pill" title="Click to view deep Insurance Dossier & Real-time Claims Timeline">
+            <span class="link-icon">🔗</span>
+            <span class="code-text">PROTO-${String(riderId).replace(/[^a-zA-Z0-9]/g, '')}-NODE781</span>
+            <span class="tag-hint">Insurance Dossier →</span>
+          </button>
+        </div>
+        <div class="incident-meta-block">
+          <div class="meta-line">
+            <span class="meta-k">Rider & GPS:</span>
+            <span class="meta-v">ID: ${riderId} • (${lat}° N, ${lon}° E)</span>
+          </div>
+          <div class="meta-line">
+            <span class="meta-k">Damage Vector:</span>
+            <span class="meta-v highlight-amber">Chassis & Fork (${peakG}G shock • ${tilt}° tilt)</span>
+          </div>
+        </div>
+        <div class="claim-status-badge-row">
+          <div class="status-badge-verified">
+            <span class="badge-check">✓</span>
+            <span>Auto-Verified (Parametric Trigger Met)</span>
+          </div>
+        </div>
+        <div class="claim-financials-peek">
+          <div class="peek-item">
+            <span class="pk-label">TOWING / UPI ADVANCE</span>
+            <span class="pk-val green-text">₹5,000 Disbursed</span>
+          </div>
+          <div class="peek-item">
+            <span class="pk-label">ER PRE-AUTH TOKEN</span>
+            <span class="pk-val cyan-text">₹25,000 Active</span>
+          </div>
+        </div>
+      `;
+      claimsQueue.prepend(financeCard);
+      const finProtoBtn = financeCard.querySelector('.protocol-pill-btn');
+      if (finProtoBtn) {
+        finProtoBtn.addEventListener('click', openInsuranceDrawer);
+      }
+      setTimeout(() => financeCard.classList.remove('flash-pulse'), 4000);
     }
 
-    // Increment today's approvals count
+    // 9. Increment Solvency Approvals Counter
     state.approvalsToday += 1;
     if (el.valApprovalsCount) {
       el.valApprovalsCount.textContent = `${state.approvalsToday} Claims`;
     }
 
-    // Alert toast
-    showToast('🚨 Telemetry Ingestion: ESP32 9.2G shock verified on #CR-8821. Auto-FNOL pushed to ER Desk & ACKO Liquidity Engine!');
+    // 10. Show live toast confirmation
+    showToast(`🚨 [LIVE WEBSOCKET] Ingested Collision: Rider ${riderId} at (${lat}° N, ${lon}° E) - Peak: ${peakG}G`);
+  }
+
+  // --- CRASH SIMULATION TRIGGER ---
+  function triggerCollisionSimulation() {
+    const demoRiderId = `TN-11-AX-${Math.floor(1000 + Math.random() * 9000)}`;
+    const demoPayload = {
+      rider_id: demoRiderId,
+      rider_name: 'Murugan K.',
+      fleet: 'Zomato Partner',
+      latitude: 12.8912 + (Math.random() * 0.008 - 0.004),
+      longitude: 80.0813 + (Math.random() * 0.008 - 0.004),
+      location_name: 'GST Road, near Vandalur Flyover',
+      kinematics_payload: {
+        peak_g: 9.2,
+        tilt_angle: 74.0,
+        pre_speed_kmh: 52.0,
+        impact_speed_kmh: 0.0,
+        decel_time_ms: 110,
+        payload_hash: 'e8f2a9c1480d8f7b901ab49a'
+      },
+      claim_status: 'ACKO Pre-Approved Incident',
+      eta_minutes: 6
+    };
+
+    // Try posting to Flask real-time backend endpoint
+    const backendUrl =
+      window.location.protocol.startsWith('http') && window.location.port === '5000'
+        ? '/api/crash-report'
+        : 'http://localhost:5000/api/crash-report';
+
+    fetch(backendUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(demoPayload)
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('✅ [API] Dispatched crash report to server:', data);
+        // Note: The WebSocket broadcast will trigger handleIncomingCrashAlert automatically!
+      })
+      .catch((err) => {
+        console.warn('⚠️ [API] Server not reachable, executing local simulation fallback:', err.message);
+        handleIncomingCrashAlert(demoPayload);
+      });
   }
 
   // --- ONE-CLICK ACTION STATES (HOSPITAL) ---
@@ -784,6 +1041,15 @@
       if (e.key === 'Escape') closeAllDrawers();
     });
   }
+
+  // Expose global controller for testing & manual simulation
+  window.AegisLink = {
+    state,
+    getSocket: () => socket,
+    handleIncomingCrashAlert,
+    triggerCollisionSimulation,
+    switchScreen
+  };
 
   // Run on DOM ready
   if (document.readyState === 'loading') {

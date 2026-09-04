@@ -56,6 +56,39 @@ python -m http.server 8000
 ```
 Open `http://localhost:8000` (or `http://localhost:3000`) in your browser.
 
+### Option C: Real-Time Python Backend (Flask-SocketIO)
+Run the real-time WebSocket telematics server:
+```bash
+# Install dependencies
+pip install flask flask-cors flask-socketio simple-websocket
+
+# Start real-time server
+python server.py
+```
+Open `http://localhost:5000` in your browser.
+
+#### Ingesting Live Crash Telemetry:
+Post an IoT crash report to trigger instant zero-refresh dashboard updates:
+```bash
+# Using Python test client
+python test_crash_report.py "TN-09-CB-1234"
+
+# Or using cURL
+curl -X POST http://localhost:5000/api/crash-report \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rider_id": "TN-11-AX-4412",
+    "latitude": 12.8912,
+    "longitude": 80.0813,
+    "kinematics_payload": {
+      "peak_g": 9.2,
+      "tilt_angle": 74.0,
+      "pre_speed_kmh": 52.0
+    }
+  }'
+```
+All connected Hospital and ACKO dashboards immediately receive the `crash_alert` WebSocket event, dynamically render a new `CRITICAL // NEW COLLISION` incident card, play an audible chime, and prepend the event to the Inbound Feed without any page refresh.
+
 ---
 
 ## 📱 Mobile App (`ble-test-app`)
