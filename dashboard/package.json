@@ -1,0 +1,18 @@
+{
+  "name": "aegislink-dashboard",
+  "version": "2.4.0",
+  "description": "AegisLink Command Portal & Twin Consoles (Hospital Trauma Desk & ACKO InsurTech)",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve ."
+  },
+  "keywords": [
+    "aegislink",
+    "telematics",
+    "insurtech",
+    "hospital-trauma",
+    "iot-esp32"
+  ],
+  "author": "dhineshkarthick16",
+  "license": "MIT"
+}

@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AegisLink Command Portal & Telematics Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-dark antialiased">
+  <!-- GOD MODE DEMO SWITCHER PILL (FLOATING NAVBAR) -->
+  <header id="global-navbar" class="hidden">
+    <div class="nav-left">
+      <div class="brand-badge">
+        <span class="logo-mark">Aegis<span class="cyan-dot">Link</span></span>
+        <span class="node-chip">v2.4 Core Node Active</span>
+      </div>
+
+      <!-- Quick Switch Portal Pill -->
+      <div class="portal-pill-wrapper">
+        <button id="demo-pill-btn" class="portal-pill" aria-haspopup="true" aria-expanded="false">
+          <span class="live-dot pulse-teal"></span>
+          <span id="demo-pill-label">🏥 Hospital Trauma Desk</span>
+          <span class="chevron">▾</span>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div id="demo-pill-dropdown" class="pill-dropdown hidden">
+          <div class="dropdown-header">SWITCH DEMO CONSOLE</div>
+          <button class="dropdown-item active" data-target="hospital">
+            <div class="item-icon">🏥</div>
+            <div class="item-info">
+              <div class="item-title">Hospital Emergency Desk <span class="check-badge">✓</span></div>
+              <div class="item-desc">Trauma intake, live ambulance routing, ICU prep.</div>
+            </div>
+          </button>
+          <button class="dropdown-item" data-target="finance">
+            <div class="item-icon">⚡</div>
+            <div class="item-info">
+              <div class="item-title">Finance & InsurTech (ACKO) <span class="arrow-badge">→</span></div>
+              <div class="item-desc">Parametric claim engine, 15s MPU logs, UPI advance.</div>
+            </div>
+          </button>
+          <button class="dropdown-item" data-target="auth">
+            <div class="item-icon">🔒</div>
+            <div class="item-info">
+              <div class="item-title">Command Portal / Auth Switch <span class="arrow-badge">→</span></div>
+              <div class="item-desc">Switch role, verify master node credentials.</div>
+            </div>
+          </button>
+          <div class="dropdown-footer">
+            <span class="sync-icon">🔄</span> Demo Mode: Shared Incident <strong id="global-incident-tag">#CR-8821</strong> Active
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Contextual Ticker / Header info -->
+    <div class="nav-center" id="nav-center-slot">
+      <!-- Dynamic per console -->
+    </div>
+
+    <!-- Right Controls -->
+    <div class="nav-right" id="nav-right-slot">
+      <!-- Dynamic per console -->
+    </div>
+  </header>
+
+  <!-- ================================================================= -->
+  <!-- SCREEN 1: PORTAL SELECTION & AUTHENTICATION (SPLIT SCREEN)         -->
+  <!-- ================================================================= -->
+  <main id="auth-screen" class="split-auth-container">
+    <!-- LEFT HALF: Brand & Telemetry Ambient Panel (Dark Tech Theme) -->
+    <section class="auth-left-panel">
+      <div class="ambient-grid-overlay"></div>
+      
+      <!-- Top-Left Header -->
+      <div class="auth-brand-header">
+        <div class="brand-logo">AegisLink<span class="cyan-accent">.</span></div>
+        <div class="node-pill">v2.4 Core Node Active</div>
+      </div>
+
+      <!-- Center Copy & Visual Element -->
+      <div class="auth-center-content">
+        <div class="headline-pill">PARAMETRIC PROTOCOL</div>
+        <h1 class="auth-headline">Parametric Protection Meets Algorithmic Mobility.</h1>
+        <p class="auth-body">
+          Continuous edge-computing telematics enabling instant zero-touch claim liquidity and real-time emergency response for commercial fleets.
+        </p>
+
+        <!-- Visual Element: Stylized Wireframe Graphic of Two-Wheeler Telemetry Mesh -->
+        <div class="bike-telemetry-container">
+          <div class="telemetry-badge-float top-right">
+            <span class="indicator-ping"></span>
+            <span>GPS: 12.8912° N, 80.0813° E</span>
+          </div>
+          <div class="telemetry-badge-float center-left">
+            <span class="indicator-ping warning"></span>
+            <span>IMU: MPU-6050 6-AXIS // 100Hz</span>
+          </div>
+          <div class="telemetry-badge-float bottom-right">
+            <span class="indicator-ping success"></span>
+            <span>Network Latency: &lt;28ms (NB-IoT)</span>
+          </div>
+
+          <!-- Stylized SVG Wireframe Mesh of Electric Two-Wheeler with Telematics Nodes -->
+          <svg class="bike-wireframe-svg" viewBox="0 0 540 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Grid Lines Background -->
+            <defs>
+              <pattern id="telemetryGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(34, 211, 238, 0.07)" stroke-width="0.75" />
+              </pattern>
+              <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#0891b2" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="frameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#818cf8"/>
+              </linearGradient>
+            </defs>
+
+            <rect width="100%" height="100%" fill="url(#telemetryGrid)"/>
+
+            <!-- Ground Line -->
+            <line x1="40" y1="280" x2="500" y2="280" stroke="rgba(148, 163, 184, 0.3)" stroke-width="1.5" stroke-dasharray="4 4" />
+
+            <!-- Rear Wheel -->
+            <circle cx="120" cy="240" r="40" stroke="#38bdf8" stroke-width="2" stroke-dasharray="2 3" opacity="0.8"/>
+            <circle cx="120" cy="240" r="26" stroke="#22d3ee" stroke-width="1.5" opacity="0.6"/>
+            <circle cx="120" cy="240" r="6" fill="#38bdf8"/>
+            <!-- Spokes -->
+            <line x1="120" y1="200" x2="120" y2="280" stroke="#38bdf8" stroke-width="1" opacity="0.4"/>
+            <line x1="80" y1="240" x2="160" y2="240" stroke="#38bdf8" stroke-width="1" opacity="0.4"/>
+
+            <!-- Front Wheel -->
+            <circle cx="410" cy="240" r="40" stroke="#38bdf8" stroke-width="2" stroke-dasharray="2 3" opacity="0.8"/>
+            <circle cx="410" cy="240" r="26" stroke="#22d3ee" stroke-width="1.5" opacity="0.6"/>
+            <circle cx="410" cy="240" r="6" fill="#38bdf8"/>
+            <line x1="410" y1="200" x2="410" y2="280" stroke="#38bdf8" stroke-width="1" opacity="0.4"/>
+            <line x1="370" y1="240" x2="450" y2="240" stroke="#38bdf8" stroke-width="1" opacity="0.4"/>
+
+            <!-- Chassis Frame Lines -->
+            <path d="M120 240 L190 230 L250 220 L310 170 L380 130 L410 240" stroke="url(#frameGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M190 230 L240 150 L320 150 L380 130" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M240 150 L270 230" stroke="#0ea5e9" stroke-width="2" stroke-dasharray="3 3"/>
+            <!-- Seat and Handlebars -->
+            <path d="M210 148 L270 148" stroke="#f43f5e" stroke-width="4" stroke-linecap="round"/>
+            <path d="M380 130 L370 100 L395 95" stroke="#e2e8f0" stroke-width="3" stroke-linecap="round"/>
+            
+            <!-- Battery / Motor Bay -->
+            <rect x="200" y="180" width="70" height="42" rx="6" fill="rgba(15, 23, 42, 0.85)" stroke="#38bdf8" stroke-width="1.5"/>
+            <text x="210" y="205" fill="#38bdf8" font-size="9" font-family="'JetBrains Mono', monospace">4.4kW BLDC</text>
+
+            <!-- ESP32 Edge Computing Telemetry Node (Mounted on Frame) -->
+            <circle cx="280" cy="190" r="16" fill="url(#nodeGlow)"/>
+            <circle cx="280" cy="190" r="6" fill="#06b6d4" class="pulsing-node"/>
+            <rect x="270" y="180" width="20" height="20" rx="3" stroke="#22d3ee" stroke-width="1.5" fill="none"/>
+            <text x="295" y="185" fill="#22d3ee" font-size="10" font-family="'JetBrains Mono', monospace" font-weight="bold">ESP32 Core Node</text>
+            <text x="295" y="198" fill="#94a3b8" font-size="8" font-family="'JetBrains Mono', monospace">Telemetry Mesh #781</text>
+
+            <!-- Impact Shock Wave Vectors (Visual Telemetry) -->
+            <path d="M410 240 L450 200" stroke="#ef4444" stroke-width="2" stroke-dasharray="3 2" opacity="0.8"/>
+            <circle cx="450" cy="200" r="4" fill="#ef4444"/>
+            <text x="460" y="203" fill="#f87171" font-size="9" font-family="'JetBrains Mono', monospace">G-Force Vector</text>
+
+            <path d="M120 240 L70 210" stroke="#10b981" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>
+            <text x="35" y="205" fill="#34d399" font-size="8" font-family="'JetBrains Mono', monospace">Wheel Speed: 0km/h</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Footer Status -->
+      <div class="auth-left-footer">
+        <span class="live-dot-green"></span>
+        <span class="status-text">System Operational | 99.98% Edge Network Uptime</span>
+      </div>
+    </section>
+
+    <!-- RIGHT HALF: Portal Selection & Authentication Panel (Clean Minimalist) -->
+    <section class="auth-right-panel">
+      <div class="auth-form-card">
+        <!-- Header Block -->
+        <div class="auth-form-header">
+          <div class="auth-logo-sub">AEGIS COMMAND GATEWAY</div>
+          <h2 class="auth-title">AegisLink Command Portal</h2>
+          <p class="auth-subtitle">Select your operational role to access secure telemetry data.</p>
+        </div>
+
+        <!-- Step 1: Role Selector (Interactive Segmented Cards) -->
+        <div class="form-section">
+          <label class="section-label">STEP 1 // SELECT OPERATIONAL ROLE</label>
+          <div class="role-cards-grid">
+            <!-- Card A: Healthcare & Emergency Center -->
+            <div class="role-card active" data-role="hospital" id="role-card-hospital" tabindex="0">
+              <div class="card-radio-mark"></div>
+              <div class="role-icon-box crimson-glow">
+                <span class="icon">🚑</span>
+              </div>
+              <div class="role-card-content">
+                <div class="role-title">Emergency Response</div>
+                <div class="role-agency">Healthcare &amp; Trauma Center</div>
+                <div class="role-caption">Trauma dispatch, crash severity telemetry, and golden-hour routing.</div>
+              </div>
+            </div>
+
+            <!-- Card B: Finance & Claims Center -->
+            <div class="role-card" data-role="finance" id="role-card-finance" tabindex="0">
+              <div class="card-radio-mark"></div>
+              <div class="role-icon-box violet-glow">
+                <span class="icon">🛡️</span>
+              </div>
+              <div class="role-card-content">
+                <div class="role-title">Finance &amp; InsurTech</div>
+                <div class="role-agency">ACKO Claims &amp; Underwriting</div>
+                <div class="role-caption">Parametric FNOL settlement, liquidity advances, and credit underwriting.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Credential Inputs -->
+        <div class="form-section">
+          <label class="section-label">STEP 2 // NODE CREDENTIALS &amp; AUTH</label>
+          <div class="input-group">
+            <label for="input-operator-id" class="input-label">Node Operator / Work ID</label>
+            <div class="input-wrapper">
+              <span class="input-icon">👤</span>
+              <input type="text" id="input-operator-id" value="ER-APOLLO-78241" placeholder="e.g., OP-78241 or insurer@acko.com" />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <div class="input-label-row">
+              <label for="input-security-key" class="input-label">Security Key / Password</label>
+              <button type="button" id="btn-request-bypass" class="helper-link">Auto-Fill Master Bypass</button>
+            </div>
+            <div class="input-wrapper">
+              <span class="input-icon">🔑</span>
+              <input type="password" id="input-security-key" value="••••••••••••••••" placeholder="Enter master authorization code" />
+            </div>
+          </div>
+
+          <div class="checkbox-row">
+            <label class="checkbox-container">
+              <input type="checkbox" id="check-remember" checked />
+              <span class="checkmark"></span>
+              <span class="checkbox-text">Remember hardware session on this workstation</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Step 3: Action & Validation -->
+        <div class="form-section action-section">
+          <button type="button" id="btn-authenticate" class="btn-primary-auth">
+            <span class="btn-text">Authenticate &amp; Enter Console →</span>
+            <span class="btn-spinner hidden"></span>
+          </button>
+
+          <div class="security-caption">
+            <span class="lock-glyph">🔒</span>
+            <code>Hardware-level AES-256 encrypted payload channel.</code>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================================================================= -->
+  <!-- SCREEN 2: HOSPITAL EMERGENCY TRAUMA CONSOLE (SPLIT 3-ZONE)        -->
+  <!-- ================================================================= -->
+  <section id="hospital-screen" class="console-screen hidden">
+    <!-- Top Sub-Header Bar (Hospital Identity & Live Capacity) -->
+    <div class="console-header hospital-theme-header">
+      <div class="header-left">
+        <div class="hospital-brand">
+          <h2 class="facility-name">Apollo Trauma &amp; Emergency Care</h2>
+          <div class="zone-pill">Zone: South Suburban Corridor (GST Road - Vandalur)</div>
+        </div>
+        <div class="live-status-pill live-pulsing">
+          <span class="dot green-pulse"></span>
+          <span>Online • Receiving IoT Parametric Pings</span>
+        </div>
+      </div>
+
+      <!-- Center Capacity Counters (Hospital Readiness) -->
+      <div class="header-center capacity-meters">
+        <div class="capacity-chip" id="chip-trauma-beds">
+          <div class="chip-label">TRAUMA BEDS FREE</div>
+          <div class="chip-value highlight-cyan"><span id="beds-count">3</span> Beds Available</div>
+        </div>
+        <div class="capacity-chip">
+          <div class="chip-label">ICU STATUS</div>
+          <div class="chip-value highlight-green">2 Ventilators Available</div>
+        </div>
+        <div class="capacity-chip">
+          <div class="chip-label">ON-DUTY TRAUMA LEAD</div>
+          <div class="chip-value lead-doc">Dr. R. Arvind <span class="spec-tag">(Gen. Surgery / Ortho)</span></div>
+        </div>
+      </div>
+
+      <!-- Top-Right Quick Controls -->
+      <div class="header-right">
+        <div class="divert-control">
+          <label class="switch-label">Shift Status:</label>
+          <button id="toggle-divert-btn" class="status-toggle-pill accepting">
+            <span class="toggle-dot"></span>
+            <span id="divert-text">Accepting Inbound</span>
+          </button>
+        </div>
+        <div class="hotline-badge">
+          <span class="hotline-icon">📞</span>
+          <div>
+            <div class="hotline-tag">STATE 108 / ER DESK</div>
+            <div class="hotline-number">108 • ext 402</div>
+          </div>
+        </div>
+        <button id="btn-simulate-crash" class="sim-trigger-btn" title="Simulate incoming ESP32 crash telemetry">
+          <span>⚡ Trigger Crash Sim</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 3-Zone Workspace Layout -->
+    <div class="three-zone-layout">
+      <!-- LEFT PANEL (380px): Inbound Crash & Parametric Claims Feed -->
+      <aside class="panel left-feed-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>INBOUND TRAUMA &amp; CLAIMS FEED</span>
+            <span class="badge-count" id="feed-incident-count">3 Active</span>
+          </div>
+          <div class="panel-sub">Ranked by Golden-Hour Urgency / ETA</div>
+        </div>
+
+        <!-- Live Audio-Visual Critical Notification Banner -->
+        <div id="critical-alert-banner" class="critical-alert-banner flash-pulse">
+          <div class="alert-icon-ring">🚨</div>
+          <div class="alert-info">
+            <div class="alert-headline">CRITICAL // NEW COLLISION DETECTED</div>
+            <div class="alert-desc">ESP32 9.2G Decel Spike • Auto-FNOL Verified</div>
+          </div>
+          <button id="btn-dismiss-alert" class="alert-dismiss-btn" title="Mute audio alert">✕</button>
+        </div>
+
+        <div class="feed-scroll-container" id="inbound-feed-list">
+          <!-- CARD 1: Murugan K. (Zomato Partner) - Primary Incident -->
+          <article class="incident-card active-incident" id="card-cr-8821">
+            <div class="card-top-row">
+              <div class="patient-title-group">
+                <h3 class="patient-name">Murugan K.</h3>
+                <span class="fleet-tag zomato">Zomato Partner</span>
+              </div>
+              <span class="time-ago-tag" id="card-time-ago">3 mins ago</span>
+            </div>
+
+            <!-- Parametric Claim Status -->
+            <div class="claim-status-row">
+              <span class="acko-shield-icon">🛡️</span>
+              <span class="claim-text">ACKO Pre-Approved Incident <strong>#CR-8821</strong></span>
+              <span class="zero-touch-tag">Zero-Touch Cashless</span>
+            </div>
+
+            <!-- Location & Hardware Protocol Pill -->
+            <div class="location-row">
+              <span class="loc-pin">📍</span>
+              <span class="loc-text">GST Road, near Vandalur Flyover (12.8912° N, 80.0813° E)</span>
+            </div>
+
+            <div class="protocol-code-row">
+              <button class="protocol-pill-btn" id="btn-open-vehicle-modal" title="Click to view Vehicle & ESP32 Black-Box Hardware Drawer">
+                <span class="link-icon">🔗</span>
+                <span class="code-text">AL-ESP32-TN11AX4412</span>
+                <span class="tag-hint">Inspect Hardware →</span>
+              </button>
+            </div>
+
+            <!-- Ambulance Status & Live ETA -->
+            <div class="card-status-grid">
+              <div class="status-col">
+                <div class="label">AMBULANCE STATUS</div>
+                <div class="ambulance-pill dispatched">
+                  <span class="amb-icon">🚑</span>
+                  <span id="amb-unit-text">108 Unit TN-09-G-412 (En Route)</span>
+                </div>
+              </div>
+              <div class="status-col eta-col">
+                <div class="label">LIVE ARRIVAL COUNTDOWN</div>
+                <div class="eta-countdown-badge">
+                  <span class="eta-timer" id="hospital-eta-timer">05:48</span>
+                  <span class="eta-km">(3.2 km away)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Severity Indicator -->
+            <div class="severity-footer critical">
+              <div class="sev-badge">CRITICAL COLLISION</div>
+              <div class="sev-metric">9.2G Peak Kinetic Shock • 74° Tilt Downed</div>
+            </div>
+          </article>
+
+          <!-- CARD 2: Secondary Patient Inbound -->
+          <article class="incident-card" id="card-cr-8819">
+            <div class="card-top-row">
+              <div class="patient-title-group">
+                <h3 class="patient-name">Praveen S.</h3>
+                <span class="fleet-tag swiggy">Swiggy Instamart</span>
+              </div>
+              <span class="time-ago-tag">14 mins ago</span>
+            </div>
+            <div class="claim-status-row">
+              <span class="acko-shield-icon">🛡️</span>
+              <span class="claim-text">ACKO Pre-Approved Incident <strong>#CR-8819</strong></span>
+            </div>
+            <div class="location-row">
+              <span class="loc-pin">📍</span>
+              <span class="loc-text">Tambaram Sanatorium Flyover</span>
+            </div>
+            <div class="card-status-grid">
+              <div class="status-col">
+                <div class="label">AMBULANCE STATUS</div>
+                <div class="ambulance-pill in-transit">
+                  <span class="amb-icon">🚑</span> Patient Picked Up
+                </div>
+              </div>
+              <div class="status-col eta-col">
+                <div class="label">ESTIMATED ETA</div>
+                <div class="eta-countdown-badge muted">
+                  <span class="eta-timer">12:30</span>
+                  <span class="eta-km">(6.8 km)</span>
+                </div>
+              </div>
+            </div>
+            <div class="severity-footer moderate">
+              <div class="sev-badge">MODERATE IMPACT</div>
+              <div class="sev-metric">4.8G Decel • Low-side Slide</div>
+            </div>
+          </article>
+
+          <!-- CARD 3: Monitored Incident -->
+          <article class="incident-card" id="card-cr-8815">
+            <div class="card-top-row">
+              <div class="patient-title-group">
+                <h3 class="patient-name">Anand R.</h3>
+                <span class="fleet-tag zepto">Zepto Fleet</span>
+              </div>
+              <span class="time-ago-tag">38 mins ago</span>
+            </div>
+            <div class="claim-status-row">
+              <span class="acko-shield-icon">🛡️</span>
+              <span class="claim-text">ACKO Incident <strong>#CR-8815</strong></span>
+            </div>
+            <div class="card-status-grid">
+              <div class="status-col">
+                <div class="label">AMBULANCE STATUS</div>
+                <div class="ambulance-pill on-scene">
+                  <span class="amb-icon">🚑</span> On-Scene Assessment
+                </div>
+              </div>
+              <div class="status-col eta-col">
+                <div class="label">TRIAGE</div>
+                <div class="eta-countdown-badge stable">
+                  <span>STABLE</span>
+                </div>
+              </div>
+            </div>
+            <div class="severity-footer minor">
+              <div class="sev-badge">MINOR IMPACT</div>
+              <div class="sev-metric">2.9G Vector • De-bounced Pothole</div>
+            </div>
+          </article>
+        </div>
+      </aside>
+
+      <!-- CENTER PANEL: Interactive Route & Arrival Corridor (The Map) -->
+      <main class="panel center-map-panel">
+        <div class="map-toolbar">
+          <div class="toolbar-left">
+            <span class="pulse-radar"></span>
+            <span class="map-title">LIVE CORRIDOR TELEMETRY: GST ROAD ARTERIAL</span>
+            <span class="gps-coords">12.8912° N, 80.0813° E</span>
+          </div>
+          <div class="toolbar-right">
+            <span class="legend-chip green"><span class="color-dot"></span> Fluid Traffic</span>
+            <span class="legend-chip amber"><span class="color-dot"></span> Moderate Delay</span>
+            <span class="legend-chip red"><span class="color-dot"></span> Crash Chokepoint</span>
+          </div>
+        </div>
+
+        <!-- Interactive Map Canvas / SVG Display -->
+        <div class="map-viewport" id="hospital-map-viewport">
+          <svg class="corridor-map-svg" viewBox="0 0 900 620" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <!-- Grid background -->
+              <pattern id="mapGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.03)" stroke-width="1" />
+              </pattern>
+              
+              <!-- Road Glow -->
+              <filter id="roadGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <!-- Grid Base -->
+            <rect width="100%" height="100%" fill="#080c14" />
+            <rect width="100%" height="100%" fill="url(#mapGrid)" />
+
+            <!-- Urban Blocks / Terrain Background -->
+            <g class="city-blocks" opacity="0.25">
+              <rect x="80" y="60" width="160" height="120" rx="4" fill="#1e293b" />
+              <rect x="280" y="40" width="220" height="90" rx="4" fill="#1e293b" />
+              <rect x="540" y="80" width="280" height="140" rx="4" fill="#1e293b" />
+              <rect x="60" y="240" width="140" height="180" rx="4" fill="#1e293b" />
+              <rect x="420" y="380" width="240" height="160" rx="4" fill="#1e293b" />
+              <rect x="700" y="320" width="160" height="240" rx="4" fill="#1e293b" />
+
+              <!-- Railway & Lake Landmark Labels -->
+              <path d="M40 580 L860 580" stroke="#334155" stroke-width="3" stroke-dasharray="6 4" />
+              <text x="50" y="570" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace">SOUTHERN RAILWAY CORRIDOR</text>
+              <text x="680" y="110" fill="#475569" font-size="11" font-family="'Inter', sans-serif">Vandalur Reserve Forest</text>
+              <text x="100" y="100" fill="#475569" font-size="11" font-family="'Inter', sans-serif">Tambaram South Sector</text>
+            </g>
+
+            <!-- Secondary Streets (Dark Blue/Gray) -->
+            <g class="secondary-roads" stroke="#1e293b" stroke-width="4" stroke-linecap="round">
+              <path d="M 120 40 L 120 540" />
+              <path d="M 320 40 L 320 540" />
+              <path d="M 640 40 L 640 540" />
+              <path d="M 40 180 L 860 180" />
+              <path d="M 40 420 L 860 420" />
+            </g>
+
+            <!-- MAIN GST ROAD EMERGENCY CORRIDOR ROUTE (Color-coded by Traffic) -->
+            <!-- Base Route Track -->
+            <path id="emergency-route-path" d="M 160 140 C 260 180 340 320 480 340 C 600 360 700 280 780 220" 
+                  fill="none" stroke="#0f172a" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+            
+            <!-- Traffic Segments: Green -> Amber -> Red -->
+            <!-- Segment 1: Crash Site Chokepoint (Red) -->
+            <path d="M 160 140 C 210 160 250 200 290 240" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="round" opacity="0.9" />
+            <!-- Segment 2: Arterial Transition (Amber) -->
+            <path d="M 290 240 C 340 300 400 330 480 340" fill="none" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" opacity="0.9" />
+            <!-- Segment 3: Cleared Hospital Golden-Hour Green Corridor (Green Glow) -->
+            <path d="M 480 340 C 600 360 700 280 780 220" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round" opacity="0.95" filter="url(#roadGlow)" />
+
+            <!-- Dynamic Animated Flow Pulses on Corridor -->
+            <path d="M 160 140 C 260 180 340 320 480 340 C 600 360 700 280 780 220" 
+                  fill="none" stroke="#22d3ee" stroke-width="3" stroke-dasharray="8 24" class="animated-flow-dash" />
+
+            <!-- CRASH SPOT PIN (Vandalur Flyover) -->
+            <g class="crash-pin-group" transform="translate(160, 140)">
+              <!-- Pulsating Shock Rings -->
+              <circle cx="0" cy="0" r="32" class="radar-ping-ring red-ring" />
+              <circle cx="0" cy="0" r="18" class="radar-ping-ring red-ring-fast" />
+              <!-- Pin Core -->
+              <circle cx="0" cy="0" r="10" fill="#ef4444" stroke="#ffffff" stroke-width="2.5" />
+              <text x="0" y="4" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="bold">💥</text>
+              
+              <!-- Crash Label Card -->
+              <rect x="18" y="-34" width="170" height="46" rx="6" fill="rgba(15, 23, 42, 0.95)" stroke="#ef4444" stroke-width="1.5" />
+              <text x="28" y="-18" fill="#f87171" font-size="10" font-family="'JetBrains Mono', monospace" font-weight="bold">CRASH SPOT // 9.2G</text>
+              <text x="28" y="-4" fill="#cbd5e1" font-size="9" font-family="'Inter', sans-serif">GST Road • Vandalur Flyover</text>
+            </g>
+
+            <!-- DESTINATION: APOLLO TRAUMA & EMERGENCY CARE PIN -->
+            <g class="hospital-pin-group" transform="translate(780, 220)">
+              <circle cx="0" cy="0" r="28" class="radar-ping-ring teal-ring" />
+              <rect x="-16" y="-16" width="32" height="32" rx="8" fill="#0f766e" stroke="#2dd4bf" stroke-width="2.5" />
+              <text x="0" y="6" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="bold">🏥</text>
+
+              <!-- Hospital Callout Card -->
+              <rect x="-190" y="-38" width="170" height="46" rx="6" fill="rgba(15, 23, 42, 0.95)" stroke="#14b8a6" stroke-width="1.5" />
+              <text x="-180" y="-22" fill="#2dd4bf" font-size="10" font-family="'JetBrains Mono', monospace" font-weight="bold">APOLLO TRAUMA BAY</text>
+              <text x="-180" y="-8" fill="#cbd5e1" font-size="9" font-family="'Inter', sans-serif">Bay 1 &amp; ICU Ready on Arrival</text>
+            </g>
+
+            <!-- LIVE MOVING AMBULANCE (GPS TRACKED) -->
+            <!-- Position is dynamically animated via JS entlang path -->
+            <g id="live-ambulance-marker" transform="translate(380, 310)">
+              <circle cx="0" cy="0" r="20" class="radar-ping-ring blue-ring" />
+              <rect x="-14" y="-14" width="28" height="28" rx="6" fill="#0284c7" stroke="#38bdf8" stroke-width="2" />
+              <text x="0" y="5" text-anchor="middle" font-size="14">🚑</text>
+
+              <!-- Ambulance Live Label -->
+              <rect x="-60" y="-44" width="120" height="24" rx="4" fill="rgba(2, 132, 199, 0.95)" stroke="#38bdf8" stroke-width="1" />
+              <text x="0" y="-28" text-anchor="middle" fill="#ffffff" font-size="9" font-family="'JetBrains Mono', monospace" font-weight="bold">108 UNIT // 42 km/h</text>
+            </g>
+          </svg>
+
+          <!-- Floating Distance & Travel Time Card (Glassmorphism) -->
+          <div class="map-stats-card">
+            <div class="stats-row">
+              <div class="stat-item">
+                <span class="stat-label">TOTAL CORRIDOR</span>
+                <span class="stat-val">4.8 km</span>
+              </div>
+              <div class="stat-item divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">AVG TRANSIT SPEED</span>
+                <span class="stat-val highlight">42 km/h</span>
+              </div>
+              <div class="stat-item divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">TRAFFIC STATUS</span>
+                <span class="stat-val green-text">Green Corridor Cleared</span>
+              </div>
+              <div class="stat-item divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">DYNAMIC ETA</span>
+                <span class="stat-val countdown" id="map-live-eta">05m 48s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- RIGHT PANEL (360px): Pre-Arrival Trauma Sheet & Quick Actions -->
+      <aside class="panel right-actions-panel">
+        <div class="panel-header">
+          <div class="panel-title">PRE-ARRIVAL TRAUMA SHEET</div>
+          <div class="panel-sub">Telemetry Clues &amp; Pre-Arrival Allocations</div>
+        </div>
+
+        <div class="panel-scroll-content">
+          <!-- Patient Medical Profile Card -->
+          <section class="action-card patient-profile-card">
+            <div class="section-badge">PATIENT BIOMETRIC PROFILE</div>
+            <div class="profile-header-row">
+              <div class="avatar-box">MK</div>
+              <div class="profile-main-meta">
+                <div class="profile-name">Murugan K.</div>
+                <div class="profile-details">28 Yrs • Male • Tamil / Eng</div>
+              </div>
+              <div class="blood-group-badge">
+                <span class="blood-icon">🩸</span>
+                <span class="blood-type">B+</span>
+                <span class="blood-sub">Positive</span>
+              </div>
+            </div>
+
+            <div class="profile-meta-grid">
+              <div class="meta-field">
+                <span class="field-label">Pre-Existing Conditions:</span>
+                <span class="field-val">Mild Asthma (Inhaler user). Nil cardiac history.</span>
+              </div>
+              <div class="meta-field">
+                <span class="field-label">Allergies / Med Notes:</span>
+                <span class="field-val highlight-warn">No known drug allergies (NKDA).</span>
+              </div>
+              <div class="meta-field">
+                <span class="field-label">ICE Family Contact:</span>
+                <span class="field-val font-mono">Kavitha M. (Wife) • +91 98401 22819</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Crash Physics Card (Triage Clues for ER Doctors) -->
+          <section class="action-card crash-physics-card">
+            <div class="section-badge warning-badge">CRASH KINETIC PHYSICS // TRIAGE CLUES</div>
+            <div class="physics-grid">
+              <!-- Metric 1: Peak G-Force -->
+              <div class="physics-cell critical-border">
+                <div class="physics-label">PEAK IMPACT G-FORCE</div>
+                <div class="physics-value red-text">9.2G Peak</div>
+                <div class="physics-triage-clue">⚠️ Suspect internal blunt trauma, pelvic ring / femur fracture.</div>
+              </div>
+
+              <!-- Metric 2: Vehicle Angle -->
+              <div class="physics-cell">
+                <div class="physics-label">VEHICLE TILT ANGLE</div>
+                <div class="physics-value yellow-text">74° Tilt</div>
+                <div class="physics-triage-clue">Direct lateral rollover on asphalt pavement.</div>
+              </div>
+
+              <!-- Metric 3: Speed Delta -->
+              <div class="physics-cell full-width">
+                <div class="physics-label">SPEED AT COLLISION &amp; DECELERATION SPIKE</div>
+                <div class="speed-delta-row">
+                  <span class="speed-box start">52 km/h</span>
+                  <span class="speed-arrow">→</span>
+                  <span class="speed-box end">0 km/h</span>
+                  <span class="duration-pill">in 110 ms</span>
+                </div>
+                <div class="physics-triage-clue">Extreme kinetic arrest. Cervical spine immobilization indicated.</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Hospital One-Click Action Dock -->
+          <section class="action-card action-dock-card">
+            <div class="section-badge">HOSPITAL ONE-CLICK ACTION DOCK</div>
+            <div class="dock-buttons-list">
+              <!-- Action 1: Reserve Trauma Bay 1 -->
+              <button id="btn-reserve-bay" class="dock-btn btn-bay">
+                <span class="dock-icon">🛏️</span>
+                <div class="dock-content">
+                  <div class="dock-title">Reserve Trauma Bay 1</div>
+                  <div class="dock-subtitle">Pre-allocates bay &amp; alerts ER surgical nurses</div>
+                </div>
+                <span class="dock-status-tag" id="status-tag-bay">HOLD BAY</span>
+              </button>
+
+              <!-- Action 2: Alert Blood Bank (B+) -->
+              <button id="btn-alert-blood" class="dock-btn btn-blood">
+                <span class="dock-icon">🩸</span>
+                <div class="dock-content">
+                  <div class="dock-title">Alert Blood Bank (B+ POSITIVE)</div>
+                  <div class="dock-subtitle">Cross-match 2 units before ambulance arrival</div>
+                </div>
+                <span class="dock-status-tag" id="status-tag-blood">REQUEST</span>
+              </button>
+
+              <!-- Action 3: Call Ambulance Driver -->
+              <button id="btn-call-paramedic" class="dock-btn btn-call">
+                <span class="dock-icon">🚑</span>
+                <div class="dock-content">
+                  <div class="dock-title">Call Ambulance Paramedic</div>
+                  <div class="dock-subtitle">Direct VoIP comms for en-route vitals</div>
+                </div>
+                <span class="dock-status-tag">VOIP LINK</span>
+              </button>
+
+              <!-- Action 4: Download Auto-FNOL Claim Sheet / Cashless Slip -->
+              <button id="btn-download-fnol-hospital" class="dock-btn btn-fnol">
+                <span class="dock-icon">📄</span>
+                <div class="dock-content">
+                  <div class="dock-title">Generate ACKO Cashless Slip</div>
+                  <div class="dock-subtitle">Bypass deposit billing counter delay (₹25,000 pre-auth)</div>
+                </div>
+                <span class="dock-status-tag ready">VERIFIED</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================================================================= -->
+  <!-- SCREEN 3: FINANCE & INSURTECH CONSOLE (ACKO × AEGISLINK)          -->
+  <!-- ================================================================= -->
+  <section id="finance-screen" class="console-screen hidden">
+    <!-- Top Sub-Header Bar (InsurTech Operations & Solvency) -->
+    <div class="console-header finance-theme-header">
+      <div class="header-left">
+        <div class="acko-brand">
+          <div class="acko-tag">ACKO INSURTECH PORTAL</div>
+          <h2 class="facility-name">AegisLink Node Protocol v2.4</h2>
+        </div>
+      </div>
+
+      <!-- Center Metric Pills -->
+      <div class="header-center solvency-metrics">
+        <div class="metric-pill">
+          <div class="metric-val" id="val-approvals-count">142 Claims</div>
+          <div class="metric-sub">Today's Zero-Touch Approvals</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-val highlight-cyan">7.4 Seconds</div>
+          <div class="metric-sub">Mean FNOL Settlement Speed</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-val highlight-green">₹4,85,000 / ₹10,00,000</div>
+          <div class="metric-sub">Automated Liquidity Pool Disbursed</div>
+        </div>
+      </div>
+
+      <!-- Right Profile -->
+      <div class="header-right">
+        <div class="underwriter-profile">
+          <span class="uw-avatar">🛡️</span>
+          <div>
+            <div class="uw-id">ACKO-UW-409 (Lead Actuary)</div>
+            <div class="uw-status">● Audit Mode: <strong>LIVE</strong></div>
+          </div>
+        </div>
+        <button id="btn-finance-sim-crash" class="sim-trigger-btn" title="Simulate incoming telemetry claim">
+          <span>⚡ Live Telemetry Ingest</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 3-Zone Workspace Layout (1440x1024 Split-Console) -->
+    <div class="three-zone-layout finance-layout">
+      <!-- LEFT PANEL (400px): Claims Queue & Audit Feed -->
+      <aside class="panel left-feed-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>CLAIMS QUEUE &amp; AUDIT FEED</span>
+            <span class="badge-count">Live Stream</span>
+          </div>
+          <div class="panel-sub">Algorithmic FNOL Trigger Filter</div>
+        </div>
+
+        <div class="feed-scroll-container">
+          <!-- Claim Card 1: Murugan K. (Primary Target) -->
+          <article class="incident-card active-incident finance-card" id="fin-claim-cr-8821">
+            <div class="card-top-row">
+              <div class="patient-title-group">
+                <h3 class="patient-name">Murugan K.</h3>
+                <span class="fleet-tag zomato">Zomato Delivery Fleet</span>
+              </div>
+              <span class="time-ago-tag">4 mins ago</span>
+            </div>
+
+            <!-- Clickable Protocol Code Pill -->
+            <div class="protocol-code-row">
+              <button class="protocol-pill-btn finance-pill" id="btn-open-insurance-dossier" title="Click to view deep Insurance Dossier & Real-time Claims Timeline">
+                <span class="link-icon">🔗</span>
+                <span class="code-text">PROTO-TN11AX4412-NODE781</span>
+                <span class="tag-hint">Insurance Dossier →</span>
+              </button>
+            </div>
+
+            <div class="incident-meta-block">
+              <div class="meta-line">
+                <span class="meta-k">Crash Occurred:</span>
+                <span class="meta-v">08:42:15 PM (4 mins ago)</span>
+              </div>
+              <div class="meta-line">
+                <span class="meta-k">Coordinates:</span>
+                <span class="meta-v">GST Road, Vandalur (12.8912° N, 80.0813° E)</span>
+              </div>
+              <div class="meta-line">
+                <span class="meta-k">Damage Vector:</span>
+                <span class="meta-v highlight-amber">Front Fork &amp; Chassis (9.2G shock)</span>
+              </div>
+            </div>
+
+            <div class="claim-status-badge-row">
+              <div class="status-badge-verified">
+                <span class="badge-check">✓</span>
+                <span>Auto-Verified (Parametric Trigger Met)</span>
+              </div>
+            </div>
+
+            <div class="claim-financials-peek">
+              <div class="peek-item">
+                <span class="pk-label">TOWING / UPI ADVANCE</span>
+                <span class="pk-val green-text">₹5,000 Disbursed</span>
+              </div>
+              <div class="peek-item">
+                <span class="pk-label">ER PRE-AUTH TOKEN</span>
+                <span class="pk-val cyan-text">₹25,000 Active</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Claim Card 2: Praveen S. -->
+          <article class="incident-card finance-card">
+            <div class="card-top-row">
+              <div class="patient-title-group">
+                <h3 class="patient-name">Praveen S.</h3>
+                <span class="fleet-tag swiggy">Swiggy Fleet</span>
+              </div>
+              <span class="time-ago-tag">15 mins ago</span>
+            </div>
+            <div class="protocol-code-row">
+              <span class="code-text-static">PROTO-TN07BQ3301-NODE640</span>
+            </div>
+            <div class="incident-meta-block">
+              <div class="meta-line">
+                <span class="meta-k">Impact Force:</span>
+                <span class="meta-v">4.8G Decel (Low-side)</span>
+              </div>
+            </div>
+            <div class="claim-status-badge-row">
+              <div class="status-badge-review">
+                <span>Underwriting Review Passed</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Claim Card 3: Settled History -->
+          <article class="incident-card finance-card">
+            <div class="card-top-row">
+              <div class="patient-title-group">
+                <h3 class="patient-name">Deepak V.</h3>
+                <span class="fleet-tag zepto">Dunzo Express</span>
+              </div>
+              <span class="time-ago-tag">1 hr ago</span>
+            </div>
+            <div class="claim-status-badge-row">
+              <div class="status-badge-settled">
+                <span>Completed Workshop Balance (₹18,400)</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </aside>
+
+      <!-- CENTER PANEL (580px): 15-Second MPU Telemetry & Physics -->
+      <main class="panel center-telemetry-panel">
+        <div class="panel-header flex-between">
+          <div>
+            <div class="panel-title">15-SECOND MPU SENSOR TELEMETRY &amp; FORENSIC PROOF</div>
+            <div class="panel-sub">Zero-Touch FNOL Verification Eliminates Physical Surveyors &amp; Fraud</div>
+          </div>
+          <div class="telemetry-live-badge">100 Hz Continuous Black-Box Stream</div>
+        </div>
+
+        <div class="telemetry-content-body">
+          <!-- 15-Second Deceleration & Impact Waveform Chart -->
+          <div class="waveform-chart-card">
+            <div class="chart-legend-row">
+              <div class="legend-group">
+                <span class="legend-color decel-color"></span>
+                <span>Deceleration Impact Vector (G-Force)</span>
+              </div>
+              <div class="legend-group">
+                <span class="legend-color speed-color"></span>
+                <span>Vehicle Speed (km/h)</span>
+              </div>
+              <div class="legend-group">
+                <span class="legend-color tilt-color"></span>
+                <span>Chassis Tilt Angle (deg)</span>
+              </div>
+            </div>
+
+            <!-- Canvas for Interactive Telemetry Waveform -->
+            <div class="canvas-wrapper">
+              <canvas id="telemetry-waveform-canvas" width="560" height="230"></canvas>
+              <!-- Interactive Scrubbing Tooltip -->
+              <div id="canvas-scrubber-tooltip" class="scrubber-tooltip hidden">
+                <div class="tt-time" id="tt-time">T: 0.00s</div>
+                <div class="tt-metric" id="tt-gforce">G-Force: 9.2G</div>
+                <div class="tt-metric" id="tt-speed">Speed: 0 km/h</div>
+                <div class="tt-metric" id="tt-tilt">Tilt: 74°</div>
+              </div>
+            </div>
+
+            <div class="waveform-axis-labels">
+              <span>T-10s (Cruising)</span>
+              <span>T-5s</span>
+              <span class="impact-marker-label">💥 T-0s (IMPACT 9.2G)</span>
+              <span>T+2s</span>
+              <span>T+5s (Stationary)</span>
+            </div>
+
+            <div class="chart-annotation-bar">
+              <div class="annot-chip">Pre-Impact: 52 km/h • 1.1G</div>
+              <div class="annot-chip red">Kinetic Shock: 9.2G Peak (110ms)</div>
+              <div class="annot-chip yellow">Post-Crash: 74° Sideways Tilt Kill</div>
+            </div>
+          </div>
+
+          <!-- Downloadable Telemetry Log File Card -->
+          <div class="file-download-card">
+            <div class="file-icon-box">📁</div>
+            <div class="file-details">
+              <div class="file-name">MPU6050_BlackBox_15s_Stream_CR8821.csv</div>
+              <div class="file-desc">
+                High-frequency 100 Hz accelerometer (ax, ay, az), gyroscope (ωx, ωy, ωz), speed &amp; GPS coordinates.
+              </div>
+              <div class="file-size-meta">Size: ~128 KB • SHA-256 Verified Payload Hash</div>
+            </div>
+            <button id="btn-download-csv" class="btn-download-raw">
+              <span class="dl-icon">⬇</span>
+              <span>Download Raw Sensor Log</span>
+            </button>
+          </div>
+
+          <!-- Algorithmic Fraud & Collision Score -->
+          <div class="fraud-score-card">
+            <div class="score-header">
+              <span class="score-title">ALGORITHMIC FRAUD &amp; COLLISION VALIDATION SCORE</span>
+              <span class="score-passed-badge">PASSED • ZERO FRAUD DETECTED</span>
+            </div>
+            <div class="score-bars-grid">
+              <div class="score-bar-item">
+                <div class="bar-meta">
+                  <span class="bar-name">Kinetic Validity (Multi-Axis MPU-6050):</span>
+                  <span class="bar-val highlight-green">99.4%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill green" style="width: 99.4%"></div>
+                </div>
+              </div>
+
+              <div class="score-bar-item">
+                <div class="bar-meta">
+                  <span class="bar-name">Pothole / False Drop Anomaly Probability:</span>
+                  <span class="bar-val highlight-cyan">0.2% (De-bounced &amp; Cleared)</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill cyan" style="width: 0.2%"></div>
+                </div>
+              </div>
+
+              <div class="score-bar-item">
+                <div class="bar-meta">
+                  <span class="bar-name">Wheel Gyroscope RPM Deceleration Curve:</span>
+                  <span class="bar-val highlight-green">99.8% Consistent</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill green" style="width: 99.8%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- RIGHT PANEL (460px): Financial Action & Auto-Payout -->
+      <aside class="panel right-actions-panel">
+        <div class="panel-header">
+          <div class="panel-title">PARAMETRIC SETTLEMENT &amp; INSTANT ACTIONS</div>
+          <div class="panel-sub">Zero-Touch Solvency Execution</div>
+        </div>
+
+        <div class="panel-scroll-content">
+          <!-- Parametric Claim Settlement Card -->
+          <section class="action-card settlement-card">
+            <div class="section-badge">CALCULATED DAMAGE ESTIMATION</div>
+            <div class="damage-bracket-box">
+              <div class="bracket-sub">Algorithmic Repair Cost Bracket</div>
+              <div class="bracket-value">₹8,500 – ₹12,000</div>
+              <div class="bracket-detail">
+                Estimated from 9.2G kinetic vector on front fork, chassis steering stem, and fairing impact.
+              </div>
+            </div>
+          </section>
+
+          <!-- Instant UPI Micro-Advance Card -->
+          <section class="action-card upi-advance-card">
+            <div class="section-badge highlight-badge">INSTANT UPI EMERGENCY MICRO-ADVANCE</div>
+            
+            <div class="upi-recipient-row">
+              <div class="upi-avatar">⚡</div>
+              <div>
+                <div class="upi-name">Murugan K. (Registered Rider Account)</div>
+                <div class="upi-id font-mono">murugan.zomato@okaxis</div>
+              </div>
+            </div>
+
+            <div class="payout-amount-display">
+              <div class="payout-num">₹5,000.00</div>
+              <div class="payout-purpose">Emergency Roadside Assistance &amp; Towing Advance</div>
+            </div>
+
+            <div class="sla-timer-row">
+              <span class="sla-label">Parametric Trigger SLA:</span>
+              <span class="sla-val">Auto-Disbursed on Collision Confirmation (10-second SLA)</span>
+            </div>
+
+            <div class="utr-box" id="utr-ref-box">
+              <span class="utr-label">BANKING UTR REFERENCE:</span>
+              <span class="utr-val font-mono" id="utr-reference-code">UPI-ACKO-882941075</span>
+              <span class="utr-status-badge">SETTLED</span>
+            </div>
+          </section>
+
+          <!-- Hospital Cashless Authorization -->
+          <section class="action-card hospital-auth-card">
+            <div class="section-badge">HOSPITAL CASHLESS PRE-AUTHORIZATION</div>
+            <div class="auth-amount-row">
+              <div class="auth-token-val">₹25,000 Pre-Auth Token</div>
+              <div class="auth-token-status">Pushed to ER Desk</div>
+            </div>
+            <div class="auth-hospital-target">
+              <span class="target-icon">🏥</span>
+              <span>Apollo Trauma Center (GST Road Corridor Desk)</span>
+            </div>
+            <div class="token-hash font-mono">TOKEN: AUTH-APOLLO-GST-25K-8821</div>
+          </section>
+
+          <!-- Underwriter Overrides Dock -->
+          <section class="action-card underwriter-dock-card">
+            <div class="section-badge">UNDERWRITER OVERRIDES &amp; CONTROLS</div>
+            <div class="uw-buttons-list">
+              <!-- Payout Button -->
+              <button id="btn-release-payout" class="uw-btn btn-release-payout">
+                <span class="btn-icon">⚡</span>
+                <div class="btn-info">
+                  <div class="btn-title">Release Emergency Payout (₹5,000 UPI)</div>
+                  <div class="btn-desc">Force manual re-push or second tranche liquidity</div>
+                </div>
+              </button>
+
+              <!-- Export PDF/Audit Button -->
+              <button id="btn-export-fnol-pack" class="uw-btn btn-export-pack">
+                <span class="btn-icon">📄</span>
+                <div class="btn-info">
+                  <div class="btn-title">Export FNOL Audit Pack (PDF / Print)</div>
+                  <div class="btn-desc">Cryptographic black-box evidence dossier</div>
+                </div>
+              </button>
+
+              <!-- Surveyor Review Flag Button -->
+              <button id="btn-flag-surveyor" class="uw-btn btn-flag-surveyor">
+                <span class="btn-icon">⚠️</span>
+                <div class="btn-info">
+                  <div class="btn-title">Flag for Manual Surveyor Review</div>
+                  <div class="btn-desc">Use only if fraud anomaly score exceeds 15%</div>
+                </div>
+              </button>
+            </div>
+          </section>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================================================================= -->
+  <!-- MODAL / DRAWER 1: VEHICLE DETAIL DRAWER (From Hospital Feed)       -->
+  <!-- ================================================================= -->
+  <div id="vehicle-drawer-backdrop" class="drawer-backdrop hidden"></div>
+  <aside id="vehicle-drawer" class="slide-drawer hidden" aria-labelledby="vehicle-drawer-title">
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-tag">HARDWARE TELEMETRY SPEC</div>
+        <h3 id="vehicle-drawer-title" class="drawer-title">Vehicle &amp; Edge Node Dossier</h3>
+      </div>
+      <button id="btn-close-vehicle-drawer" class="drawer-close-btn" aria-label="Close Drawer">✕</button>
+    </div>
+
+    <div class="drawer-scroll-body">
+      <!-- Section A: Vehicle Identity & Registration -->
+      <section class="drawer-section">
+        <h4 class="section-heading">A. VEHICLE IDENTITY &amp; REGISTRATION</h4>
+        <div class="drawer-spec-grid">
+          <div class="spec-row">
+            <span class="spec-k">Vehicle Number:</span>
+            <span class="spec-v font-mono font-bold highlight-cyan">TN-11-AX-4412</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Make &amp; Model:</span>
+            <span class="spec-v">TVS iQube Electric (2024 Model)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Owner / Fleet Registration:</span>
+            <span class="spec-v">Registered via Zomato Fleet Operations South</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Chassis / VIN:</span>
+            <span class="spec-v font-mono">MD625AK39P100892</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Motor Type:</span>
+            <span class="spec-v">4.4 kW BLDC Hub Motor • 3.04 kWh Li-ion</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section B: Black-Box Hardware Status -->
+      <section class="drawer-section">
+        <h4 class="section-heading">B. BLACK-BOX HARDWARE STATUS</h4>
+        <div class="drawer-spec-grid">
+          <div class="spec-row">
+            <span class="spec-k">Device ID &amp; Firmware:</span>
+            <span class="spec-v font-mono">ESP32-WROOM-32D • v2.4.1-PROD</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Device Battery Health:</span>
+            <span class="spec-v font-mono highlight-green">91% (Internal Li-ion backup operating)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">IMU &amp; Sensor Health:</span>
+            <span class="spec-v highlight-green">6-Axis MPU-6050 Calibrated &amp; Operational</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Signal Strength &amp; Network:</span>
+            <span class="spec-v">4G LTE-M / NB-IoT • Latency: 28 ms</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Sampling Frequency:</span>
+            <span class="spec-v font-mono">100 Hz Continuous Ring-Buffer</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section C: Active Kinetic Snapshot (At Point of Impact) -->
+      <section class="drawer-section">
+        <h4 class="section-heading">C. ACTIVE KINETIC SNAPSHOT (AT POINT OF IMPACT)</h4>
+        <div class="drawer-spec-grid">
+          <div class="spec-row">
+            <span class="spec-k">Recorded Impact Force:</span>
+            <span class="spec-v highlight-red font-bold">9.2G Peak</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Vehicle Tilt Angle:</span>
+            <span class="spec-v highlight-amber font-bold">74° (Vehicle sideways on pavement)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Pre-Impact Speed:</span>
+            <span class="spec-v">52 km/h</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Impact Speed:</span>
+            <span class="spec-v font-bold">0 km/h (Sudden kinetic halt in 110ms)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Payload Hash:</span>
+            <span class="spec-v font-mono highlight-cyan">SHA-256: e8f2...b49a (Verified edge signature)</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="drawer-action-footer">
+        <button id="btn-drawer-copy-hash" class="btn-drawer-action">
+          <span>📋 Copy Cryptographic Hash</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================================================================= -->
+  <!-- MODAL / DRAWER 2: INSURANCE DOSSIER & CLAIMS TIMELINE DRAWER       -->
+  <!-- ================================================================= -->
+  <div id="insurance-drawer-backdrop" class="drawer-backdrop hidden"></div>
+  <aside id="insurance-drawer" class="slide-drawer hidden" aria-labelledby="insurance-drawer-title">
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-tag">INSURANCE DOSSIER: PROTO-TN11AX4412-NODE781</div>
+        <h3 id="insurance-drawer-title" class="drawer-title">Parametric Policy &amp; Real-Time Settlement</h3>
+      </div>
+      <button id="btn-close-insurance-drawer" class="drawer-close-btn" aria-label="Close Drawer">✕</button>
+    </div>
+
+    <div class="drawer-scroll-body">
+      <!-- Status Badge at Top -->
+      <div class="timeline-hero-badge">
+        <span class="lightning-icon">⚡</span>
+        <div>
+          <div class="hero-title">Parametric Settlement Active (Stage 5 of 6)</div>
+          <div class="hero-time">Overall Time Elapsed: <strong>15 Seconds</strong> (Trigger to First Liquidity Payout)</div>
+        </div>
+      </div>
+
+      <!-- TOP SECTION: Policy & Coverage Snapshot -->
+      <section class="drawer-section">
+        <h4 class="section-heading">POLICY DETAILS</h4>
+        <div class="drawer-spec-grid">
+          <div class="spec-row">
+            <span class="spec-k">Policy Number:</span>
+            <span class="spec-v font-mono font-bold highlight-cyan">ACKO-TW-COMM-9982410</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Policyholder:</span>
+            <span class="spec-v">Murugan K.</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Insured Vehicle:</span>
+            <span class="spec-v">TVS iQube Electric (TN-11-AX-4412)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Policy Type:</span>
+            <span class="spec-v highlight-green">Comprehensive Commercial Gig-Coverage (Parametric)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Policy Validity:</span>
+            <span class="spec-v">14 Oct 2025 – 13 Oct 2026 (Active)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">IDV (Insured Declared Value):</span>
+            <span class="spec-v font-bold font-mono">₹1,15,000</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="drawer-section">
+        <h4 class="section-heading">COVERAGE LIMITS &amp; RIDERS</h4>
+        <div class="drawer-spec-grid">
+          <div class="spec-row">
+            <span class="spec-k">Own Damage (OD) Cover:</span>
+            <span class="spec-v font-mono">Up to ₹85,000</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Roadside &amp; Towing Liquidity:</span>
+            <span class="spec-v font-mono highlight-green">₹5,000 (Instant Zero-Doc)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Cashless Hospitalization Advance:</span>
+            <span class="spec-v font-mono highlight-cyan">₹25,000 (Parametric Pre-Auth)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Third-Party Liability:</span>
+            <span class="spec-v">Unlimited Legal Cover</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="drawer-section">
+        <h4 class="section-heading">TELEMATICS MOBILITY &amp; CREDIT SCORE</h4>
+        <div class="drawer-spec-grid">
+          <div class="spec-row">
+            <span class="spec-k">Algorithmic Mobility Score:</span>
+            <span class="spec-v highlight-green font-bold">865 / 900 (Top Tier)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Monthly Shift Consistency:</span>
+            <span class="spec-v">96.2% Uptime</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Pre-Approved Micro-Repair Credit:</span>
+            <span class="spec-v font-mono">₹15,000 at 1.1%</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-k">Associated Neo-Bank:</span>
+            <span class="spec-v">Jupiter / Fi Partner Account Verified</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- MAIN SECTION: Live Parametric Claim Settlement Timeline -->
+      <section class="drawer-section">
+        <h4 class="section-heading">LIVE PARAMETRIC CLAIM SETTLEMENT TIMELINE</h4>
+        
+        <div class="timeline-stepper">
+          <!-- Step 1: T-0 -->
+          <div class="timeline-step completed">
+            <div class="step-indicator">
+              <span class="step-dot"></span>
+              <span class="step-line"></span>
+            </div>
+            <div class="step-card">
+              <div class="step-meta">
+                <span class="step-time">T-0 // 08:42:15 PM</span>
+                <span class="step-badge">Complete (On-Device)</span>
+              </div>
+              <div class="step-title">Kinetic Impact Detected &amp; Verified</div>
+              <div class="step-desc">
+                ESP32 IMU recorded 9.2G peak force and sustained 74° tilt. Black-box generated verified hash payload (<code>SHA-256: e8f2...b49a</code>), confirming actual collision over road vibrations.
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: T+4s -->
+          <div class="timeline-step completed">
+            <div class="step-indicator">
+              <span class="step-dot"></span>
+              <span class="step-line"></span>
+            </div>
+            <div class="step-card">
+              <div class="step-meta">
+                <span class="step-time">T+4s // 08:42:19 PM</span>
+                <span class="step-badge">Complete (System)</span>
+              </div>
+              <div class="step-title">Zero-Touch FNOL Ingestion</div>
+              <div class="step-desc">
+                ACKO Core API opened parametric claim automatically (Claim ID <strong>#ACKO-CL-88219</strong>). Call center completely bypassed; zero customer forms required.
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: T+7s -->
+          <div class="timeline-step completed">
+            <div class="step-indicator">
+              <span class="step-dot"></span>
+              <span class="step-line"></span>
+            </div>
+            <div class="step-card">
+              <div class="step-meta">
+                <span class="step-time">T+7s // 08:42:22 PM</span>
+                <span class="step-badge">Complete (Algorithmic)</span>
+              </div>
+              <div class="step-title">Parametric Policy &amp; Damage Validation</div>
+              <div class="step-desc">
+                Active commercial gig policy verified. Impact physics categorized as Tier 2 Structural Impact (Chassis &amp; Front Fork: ~₹8,500 – ₹12,000 estimate). Fraud anomaly probability flagged at 0.2% (Passed).
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: T+10s -->
+          <div class="timeline-step completed">
+            <div class="step-indicator">
+              <span class="step-dot"></span>
+              <span class="step-line"></span>
+            </div>
+            <div class="step-card">
+              <div class="step-meta">
+                <span class="step-time">T+10s // 08:42:25 PM</span>
+                <span class="step-badge">Complete (Dispatched to ER)</span>
+              </div>
+              <div class="step-title">Cashless ER Pre-Authorization Token Issued</div>
+              <div class="step-desc">
+                ₹25,000 emergency medical pre-auth token pushed directly to Apollo Trauma Care admission desk. Unlocks cashless triage upon ambulance arrival.
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5: T+15s -->
+          <div class="timeline-step completed">
+            <div class="step-indicator">
+              <span class="step-dot"></span>
+              <span class="step-line"></span>
+            </div>
+            <div class="step-card">
+              <div class="step-meta">
+                <span class="step-time">T+15s // 08:42:30 PM</span>
+                <span class="step-badge settled">Settled (Funds Credited)</span>
+              </div>
+              <div class="step-title">Instant Emergency Liquidity Disbursed</div>
+              <div class="step-desc">
+                ₹5,000 towing &amp; micro-advance credited directly to rider’s registered account (<code>murugan.zomato@okaxis</code>).
+                <br><strong>UTR Reference: UPI-ACKO-882941075</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 6: Current Stage (In Progress) -->
+          <div class="timeline-step active-step">
+            <div class="step-indicator">
+              <span class="step-dot pulsing-yellow"></span>
+            </div>
+            <div class="step-card in-progress-card">
+              <div class="step-meta">
+                <span class="step-time">Current Stage // ETA: 24 hrs</span>
+                <span class="step-badge in-progress">In Progress</span>
+              </div>
+              <div class="step-title">Garage Allocation &amp; Final Invoice Settlement</div>
+              <div class="step-desc">
+                Partner authorized repair workshop assigned based on GPS drop-off. Surveyor override waived due to telematics validity &gt;99%. Remaining balance up to ₹85,000 OD to be paid directly to workshop on invoice upload.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Underwriter Actions Inside Drawer -->
+      <div class="drawer-action-footer vertical-actions">
+        <button id="btn-view-utr-receipt" class="btn-drawer-action primary">
+          <span>📄 View Detailed Banking UTR Receipt</span>
+        </button>
+        <button id="btn-track-tow" class="btn-drawer-action">
+          <span>📍 Track Tow Truck / Garage Drop-off</span>
+        </button>
+        <button id="btn-flag-audit" class="btn-drawer-action warning">
+          <span>⚠️ Flag for Post-Repair Audit (&gt;20% deviation)</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================================================================= -->
+  <!-- MODAL 3: CASHLESS GUARANTEE SLIP / AUTO-FNOL PDF PREVIEW          -->
+  <!-- ================================================================= -->
+  <dialog id="fnol-modal" class="custom-dialog">
+    <div class="dialog-card">
+      <div class="dialog-header">
+        <div class="dialog-title-group">
+          <span class="dialog-tag">AEGIS TELEMATICS PARAMETRIC GUARANTEE</span>
+          <h3 class="dialog-title">ACKO Auto-FNOL &amp; Hospital Cashless Admission Slip</h3>
+        </div>
+        <button id="btn-close-fnol-modal" class="dialog-close-btn">✕</button>
+      </div>
+      <div class="dialog-body" id="fnol-print-area">
+        <div class="voucher-header">
+          <div class="voucher-logo">ACKO × AegisLink</div>
+          <div class="voucher-serial">CERT-ACKO-ER-88219-PROD</div>
+        </div>
+        <div class="voucher-highlight">
+          <div class="vh-title">EMERGENCY ADMISSION CASHLESS GUARANTEE</div>
+          <div class="vh-amount">PRE-AUTHORIZED AMOUNT: ₹25,000.00</div>
+          <div class="vh-notice">ZERO UPFRONT DEPOSIT REQUIRED FROM PATIENT OR FAMILY</div>
+        </div>
+        <div class="voucher-grid">
+          <div><strong>Patient Name:</strong> Murugan K. (Age 28, Male)</div>
+          <div><strong>Fleet Platform:</strong> Zomato Delivery South</div>
+          <div><strong>Policy Number:</strong> ACKO-TW-COMM-9982410</div>
+          <div><strong>Incident Ref:</strong> #CR-8821 (Kinetic Spike 9.2G)</div>
+          <div><strong>Hospital Target:</strong> Apollo Trauma &amp; Emergency Care</div>
+          <div><strong>Verified Timestamp:</strong> 08:42:15 PM (Edge Signed)</div>
+          <div class="full-row"><strong>Cryptographic Signature:</strong> <code class="font-mono">SHA-256: e8f2a9c1480d8f7b901a...b49a</code></div>
+        </div>
+        <div class="voucher-footer-seal">
+          <div class="seal-mark">APPROVED • ALGORITHMIC SETTLEMENT</div>
+          <div class="seal-text">Valid for immediate cashless emergency triage and surgical admission under IRDAI commercial telematic regulatory sandbox provisions.</div>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button id="btn-print-voucher" class="btn-primary-auth print-btn">
+          <span>🖨️ Print Cashless Slip / Save PDF</span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ================================================================= -->
+  <!-- MODAL 4: VOIP PARAMEDIC CALL TERMINAL                             -->
+  <!-- ================================================================= -->
+  <dialog id="voip-modal" class="custom-dialog">
+    <div class="dialog-card voip-card">
+      <div class="dialog-header">
+        <div class="dialog-title-group">
+          <span class="dialog-tag">EN-ROUTE AMBULANCE VOIP COMMS</span>
+          <h3 class="dialog-title">108 Unit TN-09-G-412 (Paramedic Lead)</h3>
+        </div>
+        <button id="btn-close-voip-modal" class="dialog-close-btn">✕</button>
+      </div>
+      <div class="voip-body">
+        <div class="call-pulse-avatar">
+          <span class="paramedic-icon">👨‍⚕️</span>
+          <div class="call-ring"></div>
+        </div>
+        <div class="call-status" id="voip-call-status">Connected • Secure Radio Bridge (Latency 14ms)</div>
+        <div class="vitals-telemetry-box">
+          <div class="vitals-title">LIVE EN-ROUTE VITALS STREAM</div>
+          <div class="vitals-grid">
+            <div class="vital-item">
+              <span class="v-label">HEART RATE</span>
+              <span class="v-num red-pulse" id="v-hr">104</span>
+              <span class="v-unit">BPM</span>
+            </div>
+            <div class="vital-item">
+              <span class="v-label">SpO2 OXYGEN</span>
+              <span class="v-num green" id="v-spo2">96%</span>
+              <span class="v-unit">Room Air</span>
+            </div>
+            <div class="vital-item">
+              <span class="v-label">BLOOD PRESSURE</span>
+              <span class="v-num" id="v-bp">112/74</span>
+              <span class="v-unit">mmHg</span>
+            </div>
+            <div class="vital-item">
+              <span class="v-label">CONSCIOUSNESS</span>
+              <span class="v-num cyan">GCS 14</span>
+              <span class="v-unit">Eyes Open</span>
+            </div>
+          </div>
+        </div>
+        <div class="paramedic-notes">
+          <strong>Paramedic Audio Dispatch:</strong> "Patient conscious, severe right lower extremity tenderness and pelvic bruising. Cervical collar applied, IV line established. ETA 5 minutes to hospital bay."
+        </div>
+      </div>
+      <div class="dialog-footer flex-center">
+        <button id="btn-end-voip" class="btn-hangup">End Call</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Audio Chime Synthesizer for Critical Collision Trigger -->
+  <audio id="alert-sound" preload="none"></audio>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
