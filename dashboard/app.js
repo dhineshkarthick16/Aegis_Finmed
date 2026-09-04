@@ -5,7 +5,14 @@
 
 (function () {
   'use strict';
+// ============================================================
+  // SUPABASE CONFIGURATION
+  // ============================================================
+  const SUPABASE_URL = 'https://nastuejtcymwzuugstcb.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_iwVMYYxo8EhcpXUoKnMtTw_Sx0DfbPd';
 
+  let supabaseClient = null;
+  let realtimeChannel = null;
   // --- APPLICATION STATE ---
   const state = {
     currentScreen: 'auth', // 'auth' | 'hospital' | 'finance'
@@ -44,6 +51,7 @@
     navbar: document.getElementById('global-navbar'),
     demoPillBtn: document.getElementById('demo-pill-btn'),
     demoPillDropdown: document.getElementById('demo-pill-dropdown'),
+    demoPillWrapper: document.getElementById('demo-pill-wrapper'),
     demoPillLabel: document.getElementById('demo-pill-label'),
     globalIncidentTag: document.getElementById('global-incident-tag'),
 
@@ -123,12 +131,31 @@
   };
 
   // --- INITIALIZATION ---
-  function init() {
+  async function init() {
     setupEventListeners();
     initWaveformCanvas();
     startEtaTimer();
     updateAmbulancePosition();
-    initSocket();
+
+    initSocketIO();
+    await initSupabaseRealtime();
+  }
+
+  function initSocketIO() {
+    if (typeof io !== 'undefined') {
+      try {
+        const socket = io();
+        socket.on('connect', () => {
+          console.log('⚡ [AegisLink] Socket.IO connected to local gateway server');
+        });
+        socket.on('crash_alert', (data) => {
+          console.log('🚨 [AegisLink] Socket.IO crash_alert received:', data);
+          handleIncomingCrashAlert(data, true);
+        });
+      } catch (e) {
+        console.warn('[AegisLink] Socket.IO initialization skipped:', e);
+      }
+    }
   }
 
   // --- NAVIGATION & DEMO PILL SWITCHER ---
@@ -264,61 +291,298 @@
     }
   }
 
-  // --- REAL-TIME WEBSOCKET (SOCKET.IO) CLIENT ---
-  let socket = null;
+  // ============================================================
+  // SUPABASE REAL-TIME CRASH EVENT CONNECTION
+  // ============================================================
+
   let activeIncidentCount = 3;
+  let latestCrashEvent = null;
 
-  function initSocket() {
-    if (typeof io === 'undefined') {
-      console.warn('[AegisLink] Socket.IO client library not loaded. Retrying in 1s...');
-      setTimeout(initSocket, 1000);
-      return;
-    }
-
+  function formatIncidentTime(isoStr) {
+    if (!isoStr) return 'Just now';
     try {
-      // Connect to backend: if served from flask on port 5000, connect to origin;
-      // if served from port 3000, 8000, or file://, connect to http://localhost:5000
-      const serverUrl =
-        window.location.protocol.startsWith('http') && window.location.port === '5000'
-          ? undefined
-          : 'http://localhost:5000';
-
-      socket = io(serverUrl, {
-        reconnectionAttempts: 20,
-        reconnectionDelay: 1000,
-        timeout: 5000,
-        transports: ['websocket', 'polling']
-      });
-
-      socket.on('connect', () => {
-        console.log('⚡ [AegisLink] Connected to Python Socket.IO Real-Time Backend (SID: ' + socket.id + ')');
-        showToast('⚡ Connected to AegisLink Telematics Real-Time Backend');
-      });
-
-      socket.on('connection_ack', (data) => {
-        console.log('⚡ [AegisLink] Server ACK:', data);
-      });
-
-      // LISTEN FOR crash_alert WEBSOCKET EVENT
-      socket.on('crash_alert', (payload) => {
-        console.log('🚨 [AegisLink] Received crash_alert WebSocket event:', payload);
-        handleIncomingCrashAlert(payload);
-      });
-
-      socket.on('disconnect', () => {
-        console.log('🔌 [AegisLink] Disconnected from Real-Time Backend');
-      });
-
-      socket.on('connect_error', (err) => {
-        console.log('⚠️ [AegisLink] Socket.IO connection attempt:', err.message);
-      });
-    } catch (err) {
-      console.error('[AegisLink] Error initializing Socket.IO client:', err);
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return String(isoStr);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch (_) {
+      return 'Just now';
     }
   }
 
+  async function initSupabaseRealtime() {
+    try {
+      if (!window.supabase) {
+        console.error('[AegisLink] Supabase JS library not loaded.');
+        showToast('⚠️ Supabase client library not loaded.');
+        return;
+      }
+
+      if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+        console.warn('[AegisLink] Supabase credentials have not been configured.');
+        showToast('⚠️ Configure Supabase credentials in app.js');
+        return;
+      }
+
+      supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY,
+        {
+          realtime: {
+            params: {
+              eventsPerSecond: 10
+            }
+          }
+        }
+      );
+
+      console.log('☁️ [AegisLink] Supabase client initialized for project:', SUPABASE_URL);
+
+      // Load initial crash events from Supabase to populate dashboard immediately
+      try {
+        const { data: initialEvents, error: fetchErr } = await supabaseClient
+          .from('crash_events')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (fetchErr) {
+          console.warn('[AegisLink] Could not load initial crash events (may require SELECT policy):', fetchErr.message);
+        } else if (initialEvents && initialEvents.length > 0) {
+          console.log(`📡 [AegisLink] Loaded ${initialEvents.length} existing crash event(s) from Supabase:`, initialEvents);
+          for (let i = initialEvents.length - 1; i >= 0; i--) {
+            handleSupabaseCrashEvent(initialEvents[i], false);
+          }
+        }
+      } catch (e) {
+        console.warn('[AegisLink] Initial events query exception:', e);
+      }
+
+      realtimeChannel = supabaseClient
+        .channel('aegislink-crash-events')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'crash_events'
+          },
+          (payload) => {
+            console.log(
+              '🚨 [AegisLink] REAL-TIME CRASH EVENT RECEIVED FROM SUPABASE:',
+              payload.new
+            );
+            handleSupabaseCrashEvent(payload.new, true);
+          }
+        )
+        .subscribe((status) => {
+          console.log(
+            '☁️ [AegisLink] Supabase Realtime status:',
+            status
+          );
+
+          if (status === 'SUBSCRIBED') {
+            console.log(
+              '✅ [AegisLink] Connected to Supabase Realtime crash stream'
+            );
+            showToast(
+              '☁️ Connected to live Supabase crash stream'
+            );
+          }
+
+          if (status === 'CHANNEL_ERROR') {
+            console.error(
+              '[AegisLink] Supabase Realtime channel error'
+            );
+            showToast(
+              '⚠️ Supabase Realtime channel error'
+            );
+          }
+
+          if (status === 'TIMED_OUT') {
+            console.warn(
+              '[AegisLink] Supabase Realtime connection timed out'
+            );
+          }
+
+          if (status === 'CLOSED') {
+            console.warn(
+              '[AegisLink] Supabase Realtime channel closed'
+            );
+          }
+        });
+
+    } catch (err) {
+      console.error(
+        '[AegisLink] Supabase initialization error:',
+        err
+      );
+      showToast(
+        '⚠️ Unable to connect to AegisLink cloud telemetry'
+      );
+    }
+  }
+
+  // ============================================================
+  // CONVERT SUPABASE ROW TO DASHBOARD CRASH FORMAT
+  // ============================================================
+
+  function handleSupabaseCrashEvent(row, playAudio = true) {
+    if (!row) {
+      console.warn('[AegisLink] Empty Supabase crash row');
+      return;
+    }
+
+    console.log(
+      '📡 [AegisLink] Processing Supabase crash event:',
+      row
+    );
+
+    let preCrash = [];
+    let postCrash = [];
+
+    try {
+      preCrash =
+        Array.isArray(row.pre_crash_data)
+          ? row.pre_crash_data
+          : (typeof row.pre_crash_data === 'string' ? JSON.parse(row.pre_crash_data || '[]') : []);
+    } catch (e) {
+      console.warn('[AegisLink] Unable to parse pre_crash_data:', e);
+    }
+
+    try {
+      postCrash =
+        Array.isArray(row.post_crash_data)
+          ? row.post_crash_data
+          : (typeof row.post_crash_data === 'string' ? JSON.parse(row.post_crash_data || '[]') : []);
+    } catch (e) {
+      console.warn('[AegisLink] Unable to parse post_crash_data:', e);
+    }
+
+    // ----------------------------------------------------------
+    // Calculate peak acceleration magnitude from samples
+    // ----------------------------------------------------------
+    const allSamples = [
+      ...preCrash,
+      ...postCrash
+    ];
+
+    let peakShock = 0;
+    let peakRotation = 0;
+
+    for (const sample of allSamples) {
+      let ax = 0, ay = 0, az = 0, gx = 0, gy = 0, gz = 0;
+
+      if (Array.isArray(sample) && sample.length >= 7) {
+        ax = Number(sample[1]) || 0;
+        ay = Number(sample[2]) || 0;
+        az = Number(sample[3]) || 0;
+        gx = Number(sample[4]) || 0;
+        gy = Number(sample[5]) || 0;
+        gz = Number(sample[6]) || 0;
+      } else if (sample && typeof sample === 'object') {
+        ax = Number(sample.ax) || 0;
+        ay = Number(sample.ay) || 0;
+        az = Number(sample.az) || 0;
+        gx = Number(sample.gx) || 0;
+        gy = Number(sample.gy) || 0;
+        gz = Number(sample.gz) || 0;
+      } else {
+        continue;
+      }
+
+      const accelerationMagnitudeG =
+        Math.sqrt(
+          ax * ax +
+          ay * ay +
+          az * az
+        );
+
+      const gyroMagnitude =
+        Math.sqrt(
+          gx * gx +
+          gy * gy +
+          gz * gz
+        );
+
+      peakShock = Math.max(
+        peakShock,
+        accelerationMagnitudeG
+      );
+
+      peakRotation = Math.max(
+        peakRotation,
+        gyroMagnitude
+      );
+    }
+
+    // Firmware / database fallback values
+    if (peakShock <= 0) {
+      peakShock = Number(row.peak_shock || row.peak_g || 9.84);
+    }
+    if (peakRotation <= 0) {
+      peakRotation = Number(row.peak_rotation || row.tilt_angle || 318.2);
+    }
+
+    const riderId = row.protocode
+      ? row.protocode.replace(/^ACKO-2W-/, '')
+      : (row.rider_id || 'TN09-9842');
+
+    const dashboardPayload = {
+      rider_id: riderId,
+      rider_name: row.rider_name || `Rider #${riderId}`,
+      fleet: row.fleet || 'Zomato Partner',
+
+      latitude: row.latitude != null ? row.latitude : 12.9716,
+      longitude: row.longitude != null ? row.longitude : 80.2209,
+
+      location_name:
+        row.latitude != null && row.longitude != null
+          ? `Live GPS (${Number(row.latitude).toFixed(4)}° N, ${Number(row.longitude).toFixed(4)}° E)`
+          : 'GST Corridor (12.9716° N, 80.2209° E)',
+
+      protocol_code: row.protocode || `AL-ESP32-${riderId}`,
+
+      incident_id:
+        row.id
+          ? `#CR-${String(row.id).substring(0, 8).toUpperCase()}`
+          : `#CR-${Math.floor(8822 + Math.random() * 1000)}`,
+
+      timestamp: row.event_timestamp
+        ? formatIncidentTime(row.event_timestamp)
+        : 'Just now',
+
+      claim_status:
+        row.claim_status || 'AegisLink Auto-Verified Incident',
+
+      ambulance_status:
+        row.ambulance_status || 'Emergency Response Triggered',
+
+      eta_minutes: row.eta_minutes || 6,
+
+      kinematics_payload: {
+        peak_g: peakShock.toFixed(2),
+        peak_rotation_dps: peakRotation.toFixed(2),
+        pre_speed_kmh: 48.5,
+        tilt_angle: 74,
+        sample_rate_hz: 20,
+        pre_crash_samples: preCrash.length,
+        post_crash_samples: postCrash.length,
+        total_samples: preCrash.length + postCrash.length
+      },
+
+      pre_crash_data: preCrash,
+      post_crash_data: postCrash,
+
+      gps_accuracy_m: row.gps_accuracy_m,
+      raw_supabase_row: row
+    };
+
+    latestCrashEvent = dashboardPayload;
+    handleIncomingCrashAlert(dashboardPayload, playAudio);
+  }
+
   // --- DYNAMIC DOM MANIPULATION FOR CRASH ALERT ---
-  function handleIncomingCrashAlert(data) {
+  function handleIncomingCrashAlert(data, playAudio = true) {
     if (!data) return;
 
     const riderId = data.rider_id || 'UNKNOWN';
@@ -435,7 +699,9 @@
     }
 
     // 6. Play collision alarm chime
-    playCollisionAlertSound();
+    if (playAudio) {
+      playCollisionAlertSound();
+    }
 
     // 7. Reset live ETA & ambulance marker on map
     state.sharedPatient.etaSeconds = etaMins * 60;
@@ -504,51 +770,109 @@
     }
 
     // 10. Show live toast confirmation
-    showToast(`🚨 [LIVE WEBSOCKET] Ingested Collision: Rider ${riderId} at (${lat}° N, ${lon}° E) - Peak: ${peakG}G`);
+    showToast(
+  `🚨 [LIVE SUPABASE] Crash ingested: ${protocolCode} at (${lat}° N, ${lon}° E) — Peak: ${peakG}G`
+);
   }
 
   // --- CRASH SIMULATION TRIGGER ---
+  // ============================================================
+  // LOCAL DASHBOARD DEMO SIMULATION
+  // ============================================================
+
   function triggerCollisionSimulation() {
-    const demoRiderId = `TN-11-AX-${Math.floor(1000 + Math.random() * 9000)}`;
-    const demoPayload = {
-      rider_id: demoRiderId,
-      rider_name: 'Murugan K.',
-      fleet: 'Zomato Partner',
-      latitude: 12.8912 + (Math.random() * 0.008 - 0.004),
-      longitude: 80.0813 + (Math.random() * 0.008 - 0.004),
-      location_name: 'GST Road, near Vandalur Flyover',
-      kinematics_payload: {
-        peak_g: 9.2,
-        tilt_angle: 74.0,
-        pre_speed_kmh: 52.0,
-        impact_speed_kmh: 0.0,
-        decel_time_ms: 110,
-        payload_hash: 'e8f2a9c1480d8f7b901ab49a'
-      },
-      claim_status: 'ACKO Pre-Approved Incident',
-      eta_minutes: 6
+    console.log(
+      '🧪 [AegisLink] Running local crash simulation'
+    );
+
+    const now = Date.now();
+
+    const preCrash = [];
+    const postCrash = [];
+
+    // 20 Hz
+    // 10 seconds before = 200 samples
+    // 5 seconds after = 100 samples
+
+    for (let i = 0; i < 300; i++) {
+      const t = (i - 200) * 50;
+
+      let ax = 0.01;
+      let ay = 0.02;
+      let az = 1.0;
+
+      let gx = 0.5;
+      let gy = 0.3;
+      let gz = 0.2;
+
+      // Artificial impact around sample 200
+      if (i >= 198 && i <= 202) {
+        const distance = Math.abs(i - 200);
+        const factor = 1 - distance / 3;
+
+        ax = -2.5 * factor;
+        ay = 3.0 * factor;
+        az = 9.2 * factor;
+
+        gx = 80 * factor;
+        gy = 65 * factor;
+        gz = 45 * factor;
+      }
+
+      // Post-crash stationary state
+      if (i > 200) {
+        ax = 0.02;
+        ay = 0.96;
+        az = 0.27;
+
+        gx = 0.1;
+        gy = 0.1;
+        gz = 0.1;
+      }
+
+      const sample = [
+        now + t,
+        ax,
+        ay,
+        az,
+        gx,
+        gy,
+        gz
+      ];
+
+      if (i < 200) {
+        preCrash.push(sample);
+      } else {
+        postCrash.push(sample);
+      }
+    }
+
+    const demoRow = {
+      id: crypto.randomUUID
+        ? crypto.randomUUID()
+        : `demo-${Date.now()}`,
+
+      protocode: 'ACKO-2W-TN09-9842',
+
+      event_timestamp:
+        new Date().toISOString(),
+
+      latitude: 12.8912,
+
+      longitude: 80.0813,
+
+      gps_accuracy_m: 5.2,
+
+      pre_crash_data: preCrash,
+
+      post_crash_data: postCrash
     };
 
-    // Try posting to Flask real-time backend endpoint
-    const backendUrl =
-      window.location.protocol.startsWith('http') && window.location.port === '5000'
-        ? '/api/crash-report'
-        : 'http://localhost:5000/api/crash-report';
+    handleSupabaseCrashEvent(demoRow);
 
-    fetch(backendUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(demoPayload)
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log('✅ [API] Dispatched crash report to server:', data);
-        // Note: The WebSocket broadcast will trigger handleIncomingCrashAlert automatically!
-      })
-      .catch((err) => {
-        console.warn('⚠️ [API] Server not reachable, executing local simulation fallback:', err.message);
-        handleIncomingCrashAlert(demoPayload);
-      });
+    showToast(
+      '🧪 Demo collision injected locally — real-time UI pipeline verified'
+    );
   }
 
   // --- ONE-CLICK ACTION STATES (HOSPITAL) ---
@@ -651,12 +975,12 @@
       ['timestamp_ms', 'time_offset_s', 'accel_x_g', 'accel_y_g', 'accel_z_g', 'gyro_x_dps', 'gyro_y_dps', 'gyro_z_dps', 'speed_kmh', 'tilt_deg', 'lat', 'lon', 'hash_sig']
     ];
 
-    // Generate 15 seconds at 100 Hz = 1500 records
+    
     const baseTime = 1725400935000;
     const baseLat = 12.8912;
     const baseLon = 80.0813;
 
-    for (let i = 0; i < 1500; i++) {
+    for (let i = 0; i < 300; i++) {
       const tSec = (i - 1000) / 100; // -10.00s to +5.00s (0 is impact)
       const ms = baseTime + i * 10;
       let ax = (Math.random() * 0.1 - 0.05).toFixed(3);
@@ -1045,8 +1369,10 @@
   // Expose global controller for testing & manual simulation
   window.AegisLink = {
     state,
-    getSocket: () => socket,
+    getSupabase: () => supabaseClient,
+    getLatestCrash: () => latestCrashEvent,
     handleIncomingCrashAlert,
+    handleSupabaseCrashEvent,
     triggerCollisionSimulation,
     switchScreen
   };

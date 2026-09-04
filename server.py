@@ -9,6 +9,7 @@ import sys
 import time
 import json
 import logging
+import urllib.request
 
 # Ensure UTF-8 output encoding on Windows consoles
 if sys.platform == "win32":
@@ -167,6 +168,35 @@ def crash_report():
     # Immediately broadcast over WebSocket to all connected clients
     logger.info(f"[BROADCAST] crash_alert triggered: Rider '{rider_id}' at ({latitude}, {longitude}) | Peak G: {peak_g}G")
     socketio.emit("crash_alert", alert_payload)
+
+    # Forward crash event to Supabase cloud database
+    try:
+        supabase_url = os.environ.get("SUPABASE_URL", "https://nastuejtcymwzuugstcb.supabase.co")
+        supabase_key = os.environ.get("SUPABASE_KEY", "sb_publishable_iwVMYYxo8EhcpXUoKnMtTw_Sx0DfbPd")
+        supabase_row = {
+            "protocode": payload.get("protocode", f"ACKO-2W-{rider_id}"),
+            "event_timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "latitude": float(latitude) if isinstance(latitude, (int, float, str)) and str(latitude).replace('.', '', 1).replace('-', '', 1).isdigit() else 12.9716,
+            "longitude": float(longitude) if isinstance(longitude, (int, float, str)) and str(longitude).replace('.', '', 1).replace('-', '', 1).isdigit() else 80.2209,
+            "gps_accuracy_m": 5.0,
+            "pre_crash_data": kinematics.get("pre_crash", [{"timestamp_ms": 1000, "ax": 0.1, "ay": 0.98, "az": -0.05, "gx": 1.2, "gy": -0.8, "gz": 0.4}]),
+            "post_crash_data": kinematics.get("post_crash", [{"timestamp_ms": 2000, "ax": -5.8, "ay": float(peak_g) if str(peak_g).replace('.', '', 1).isdigit() else 9.84, "az": 4.2, "gx": 210.5, "gy": -318.2, "gz": 120.4}])
+        }
+        sb_req = urllib.request.Request(
+            f"{supabase_url}/rest/v1/crash_events",
+            data=json.dumps(supabase_row).encode("utf-8"),
+            headers={
+                "apikey": supabase_key,
+                "Authorization": f"Bearer {supabase_key}",
+                "Content-Type": "application/json",
+                "Prefer": "return=representation"
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(sb_req, timeout=3) as sb_res:
+            logger.info(f"[SUPABASE] Synced crash to Supabase DB: HTTP {sb_res.status}")
+    except Exception as sb_err:
+        logger.warning(f"[SUPABASE] Supabase sync note: {sb_err}")
 
     return jsonify({
         "status": "success",

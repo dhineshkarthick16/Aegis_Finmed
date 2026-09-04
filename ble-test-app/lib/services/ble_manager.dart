@@ -27,13 +27,16 @@ enum BleGatewayState {
 /// - Subscribing to notifications and piping chunks into [CrashDataBuffer]
 /// - Handling abrupt disconnects with automatic backoff reconnection
 class BleConnectionManager {
-  /// Designated ESP32 Service UUID (Standard 128-bit custom GATT service)
+  /// Nordic UART Service (NUS) UUID matching AegisLink ESP32 firmware
   static const String defaultServiceUuid =
-      '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+      '6E400001-B5A3-F393-E0A9-E50E24DCCA9E';
 
-  /// Designated ESP32 Characteristic UUID
+  /// Nordic UART Service TX Characteristic UUID (ESP32 -> App Notify)
   static const String defaultCharUuid =
-      'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+      '6E400003-B5A3-F393-E0A9-E50E24DCCA9E';
+
+  /// Target ESP32 hardware device name (from config.h BT_DEVICE_NAME)
+  static const String defaultTargetDeviceName = 'AEGIS_NODE_9842';
 
   final String targetServiceUuid;
   final String targetCharUuid;
@@ -188,14 +191,17 @@ class BleConnectionManager {
                     ? r.advertisementData.advName
                     : r.device.platformName)
                 .toUpperCase();
-            final matchesName = devName.contains('ESP32') ||
+            final matchesName = devName.contains('AEGIS') ||
+                devName.contains('ACKO') ||
+                devName.contains('9842') ||
+                devName.contains('ESP32') ||
                 devName.contains('CRASH') ||
                 devName.contains('ALERT');
 
             if (matchesServiceUuid || matchesName) {
               _updateState(
                 BleGatewayState.deviceFound,
-                'Found ${r.device.platformName.isEmpty ? "ESP32 Target" : r.device.platformName} (${r.device.remoteId.str})',
+                'Found ${r.device.platformName.isEmpty ? (r.advertisementData.advName.isEmpty ? "AEGIS Node" : r.advertisementData.advName) : r.device.platformName} (${r.device.remoteId.str})',
               );
               await FlutterBluePlus.stopScan();
               await _scanSub?.cancel();
@@ -279,22 +285,44 @@ class BleConnectionManager {
       final targetCharUuidClean =
           targetCharUuid.toLowerCase().replaceAll('-', '');
 
-      // 1. Try to find the exact designated service & characteristic
+      // 1. Try to find the exact designated service & TX characteristic
       for (final s in services) {
         final serviceClean = s.uuid.str.toLowerCase().replaceAll('-', '');
         if (serviceClean == targetUuidClean) {
           for (final c in s.characteristics) {
             final charClean = c.uuid.str.toLowerCase().replaceAll('-', '');
-            if (charClean == targetCharUuidClean || c.properties.notify) {
+            if (charClean == targetCharUuidClean) {
               targetChar = c;
               break;
+            }
+          }
+          if (targetChar == null) {
+            for (final c in s.characteristics) {
+              if (c.properties.notify) {
+                targetChar = c;
+                break;
+              }
             }
           }
         }
         if (targetChar != null) break;
       }
 
-      // 2. Fallback: find any characteristic that supports notify
+      // 2. Fallback: find TX characteristic in any service
+      if (targetChar == null) {
+        for (final s in services) {
+          for (final c in s.characteristics) {
+            final charClean = c.uuid.str.toLowerCase().replaceAll('-', '');
+            if (charClean == targetCharUuidClean) {
+              targetChar = c;
+              break;
+            }
+          }
+          if (targetChar != null) break;
+        }
+      }
+
+      // 3. Fallback: find any characteristic that supports notify
       if (targetChar == null) {
         for (final s in services) {
           for (final c in s.characteristics) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -69,6 +70,7 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
   StreamSubscription<String>? _bleStatusSub;
   StreamSubscription<double>? _bufferProgressSub;
   StreamSubscription<Uint8List>? _crashEventSub;
+  StreamSubscription<Map<String, dynamic>>? _parsedCrashSub;
 
   // UI State
   BleGatewayState _bleState = BleGatewayState.idle;
@@ -76,6 +78,7 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
   double _bufferProgress = 0.0;
   int _currentBufferedBytes = 0;
   int _chunkCount = 0;
+  Map<String, dynamic>? _lastParsedHardwarePayload;
 
   // Last Crash Event & Dispatch State
   bool _isProcessingCrash = false;
@@ -141,9 +144,19 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
       }
     });
 
-    // Listen to Crash Event Trigger (when buffer reaches 8.4 KB)
+    // Listen to Crash Event Trigger (when buffer reaches 8.4 KB or delimits framed payload)
     _crashEventSub = _dataBuffer.crashEventStream.listen((completeCrashBytes) {
       _handleCrashEventTriggered(completeCrashBytes);
+    });
+
+    // Listen to Parsed Crash Event from ESP32 hardware frame
+    _parsedCrashSub = _dataBuffer.parsedCrashStream.listen((data) {
+      if (mounted) {
+        setState(() {
+          _lastParsedHardwarePayload = data;
+        });
+        _addLog('📡 Hardware Delimited Frame Decoded: ${data['protocode']} (Peak: ${data['peak_shock']}G)');
+      }
     });
   }
 
@@ -166,7 +179,7 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
     });
   }
 
-  /// Triggered immediately when the incoming buffer accumulates the full 8.4 KB
+  /// Triggered immediately when the incoming buffer accumulates the full payload
   Future<void> _handleCrashEventTriggered(Uint8List crashBytes) async {
     if (_isProcessingCrash) return;
 
@@ -174,7 +187,23 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
       _isProcessingCrash = true;
     });
 
-    _addLog('🚨 CRASH DETECTED! Reassembled 8.4 KB (${crashBytes.length} B).');
+    final parsed = _dataBuffer.lastParsedPayload ?? _lastParsedHardwarePayload;
+    final protocode = parsed?['protocode'] as String?;
+    final peakShock = (parsed?['peak_shock'] is num)
+        ? (parsed!['peak_shock'] as num).toDouble()
+        : (parsed?['peak_shock'] is String
+            ? double.tryParse(parsed!['peak_shock'])
+            : null);
+    final peakRotation = (parsed?['peak_rotation'] is num)
+        ? (parsed!['peak_rotation'] as num).toDouble()
+        : (parsed?['peak_rotation'] is String
+            ? double.tryParse(parsed!['peak_rotation'])
+            : null);
+
+    final isHardwareDelimited = protocode != null;
+    _addLog(isHardwareDelimited
+        ? '🚨 CRASH DETECTED (ESP32 Framing)! Reassembled ${crashBytes.length} B (Protocode: $protocode).'
+        : '🚨 CRASH DETECTED! Reassembled 8.4 KB (${crashBytes.length} B).');
 
     // 1. Immediately fetch device GPS coordinates using Geolocator
     _addLog('📍 Fetching GPS coordinates via Geolocator...');
@@ -182,7 +211,7 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
 
     if (locationData['status'] == 'PERMISSION_DENIED' ||
         locationData['status'] == 'PERMISSION_DENIED_FOREVER') {
-      _addLog('⚠️ Location permission denied! Proceeding without GPS.');
+      _addLog('⚠️ Location permission denied! Proceeding with fallback GPS.');
       if (mounted) {
         _showPermissionDeniedSnackBar(locationData['status'] as String);
       }
@@ -194,16 +223,20 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
       _addLog('⚠️ Location status: ${locationData['status']} (${locationData['error']})');
     }
 
-    // 2. Package into CrashEvent (Base64 encoded bytes + GPS coordinates)
+    // 2. Package into CrashEvent (Base64 encoded bytes + GPS coordinates + parsed firmware metrics)
     final device = _bleManager.connectedDevice;
     final event = CrashEvent(
       timestamp: DateTime.now(),
       deviceName: device?.platformName.isNotEmpty == true
           ? device!.platformName
-          : 'ESP32_ALERT_DEVICE',
+          : (protocode != null ? BleConnectionManager.defaultTargetDeviceName : 'ESP32_ALERT_DEVICE'),
       deviceId: device?.remoteId.str ?? 'ESP32-GATEWAY-ID',
       rawBytes: crashBytes,
       location: locationData,
+      protocode: protocode,
+      peakShock: peakShock,
+      peakRotation: peakRotation,
+      parsedJson: parsed,
     );
 
     if (mounted) {
@@ -297,6 +330,52 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
     }
   }
 
+  /// Simulates exact Nordic UART streaming from ESP32 AEGIS_NODE_9842
+  /// Delimited by <CRASH_START>\n and \n<CRASH_END>\n sent in 20-byte chunks
+  Future<void> _simulateHardwareCrashPacket() async {
+    if (_isSimulating || _isProcessingCrash) return;
+
+    setState(() {
+      _isSimulating = true;
+    });
+
+    _addLog('🧪 Simulating ESP32 AEGIS_NODE_9842 Framed Transmission...');
+    _dataBuffer.reset();
+
+    final crashJson = jsonEncode({
+      "protocode": "ACKO-2W-TN09-9842",
+      "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      "peak_shock": 9.84,
+      "peak_rotation": 318.20,
+      "pre_crash": [
+        {"t": -300, "ax": 0.12, "ay": 0.98, "az": -0.05, "gx": 1.2, "gy": -0.8, "gz": 0.4},
+        {"t": -200, "ax": 0.15, "ay": 1.02, "az": -0.03, "gx": 1.5, "gy": -0.5, "gz": 0.2},
+        {"t": -100, "ax": 0.18, "ay": 0.99, "az": -0.04, "gx": 1.1, "gy": -0.7, "gz": 0.3}
+      ],
+      "post_crash": [
+        {"t": 50, "ax": -5.8, "ay": 9.84, "az": 4.2, "gx": 210.5, "gy": -318.2, "gz": 120.4},
+        {"t": 150, "ax": -3.1, "ay": 5.2, "az": 2.1, "gx": 110.2, "gy": -150.1, "gz": 60.8}
+      ]
+    });
+
+    final fullFrame = '<CRASH_START>\n$crashJson\n<CRASH_END>\n';
+    final bytes = utf8.encode(fullFrame);
+
+    const int mtu = 20; // Exact Nordic UART MTU chunk size from ESP32 firmware
+    for (int offset = 0; offset < bytes.length && _isSimulating; offset += mtu) {
+      final end = min(offset + mtu, bytes.length);
+      final chunk = bytes.sublist(offset, end);
+      _dataBuffer.appendChunk(chunk);
+      await Future.delayed(const Duration(milliseconds: 15));
+    }
+
+    if (mounted) {
+      setState(() {
+        _isSimulating = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _autoScanTimer?.cancel();
@@ -304,6 +383,7 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
     _bleStatusSub?.cancel();
     _bufferProgressSub?.cancel();
     _crashEventSub?.cancel();
+    _parsedCrashSub?.cancel();
     _dataBuffer.dispose();
     _bleManager.dispose();
     _gatewayClient.close();
@@ -460,7 +540,7 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('TARGET SERVICE UUID',
+                    const Text('TARGET SERVICE UUID (NUS)',
                         style: TextStyle(fontSize: 10, color: Colors.grey)),
                     Text(
                       '${BleConnectionManager.defaultServiceUuid.substring(0, 18)}...',
@@ -472,14 +552,14 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text('CONNECTED DEVICE',
+                    const Text('TARGET NODE / CONNECTED',
                         style: TextStyle(fontSize: 10, color: Colors.grey)),
                     Text(
                       _bleManager.connectedDevice?.platformName.isNotEmpty ==
                               true
                           ? _bleManager.connectedDevice!.platformName
                           : (_bleManager.connectedDevice?.remoteId.str ??
-                              'None'),
+                              BleConnectionManager.defaultTargetDeviceName),
                       style: const TextStyle(
                           fontSize: 12, fontWeight: FontWeight.bold),
                     ),
@@ -569,6 +649,50 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
                 ),
               ],
             ),
+            if (_lastParsedHardwarePayload != null) ...[
+              const Divider(height: 20),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.red.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.bolt, size: 16, color: Colors.red),
+                        SizedBox(width: 4),
+                        Text(
+                          'ESP32 TELEMETRY DECODED (AEGIS_NODE_9842)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Protocode: ${_lastParsedHardwarePayload!['protocode'] ?? 'ACKO-2W-TN09-9842'}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Peak Shock: ${_lastParsedHardwarePayload!['peak_shock'] ?? '9.84'} G  |  Peak Rotation: ${_lastParsedHardwarePayload!['peak_rotation'] ?? '318.2'} °/s',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade800),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -691,12 +815,46 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
               controller: _backendUrlController,
               decoration: const InputDecoration(
                 labelText: 'Backend URL Endpoint',
-                hintText: 'https://httpbin.org/post',
+                hintText: 'https://nastuejtcymwzuugstcb.supabase.co/rest/v1/crash_events',
                 isDense: true,
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.link, size: 18),
               ),
               style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                ActionChip(
+                  avatar: const Icon(Icons.cloud, size: 14, color: Colors.teal),
+                  label: const Text('Supabase Cloud DB', style: TextStyle(fontSize: 11)),
+                  onPressed: () {
+                    setState(() {
+                      _backendUrlController.text = GatewayClient.supabaseRestEndpoint;
+                    });
+                  },
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.computer, size: 14, color: Colors.indigo),
+                  label: const Text('Local Gateway (5000)', style: TextStyle(fontSize: 11)),
+                  onPressed: () {
+                    setState(() {
+                      _backendUrlController.text = 'http://10.0.2.2:5000/api/crash-report';
+                    });
+                  },
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.public, size: 14, color: Colors.grey),
+                  label: const Text('HttpBin Mock', style: TextStyle(fontSize: 11)),
+                  onPressed: () {
+                    setState(() {
+                      _backendUrlController.text = 'https://httpbin.org/post';
+                    });
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             if (_isProcessingCrash) ...[
@@ -862,12 +1020,20 @@ class _GatewayDashboardScreenState extends State<GatewayDashboardScreen> {
                       : const Icon(Icons.flash_on),
                   label: Text(_isSimulating
                       ? 'Simulating...'
-                      : 'Simulate 8.4 KB Crash'),
-                  onPressed:
-                      _isSimulating ? null : () => _simulateCrashStream(),
+                      : 'Simulate ESP32 Crash'),
+                  onPressed: _isSimulating
+                      ? null
+                      : () => _simulateHardwareCrashPacket(),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.history_toggle_off, size: 16),
+            label: const Text('Simulate 8.4 KB Raw Crash Stream',
+                style: TextStyle(fontSize: 12)),
+            onPressed: _isSimulating ? null : () => _simulateCrashStream(),
           ),
         ],
       ),

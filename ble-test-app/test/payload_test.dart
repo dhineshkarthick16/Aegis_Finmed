@@ -40,5 +40,41 @@ void main() {
       expect(json['location']['longitude'], -122.4194);
       expect(json['gateway_metadata']['agent'], contains('AgeisLink'));
     });
+
+    test('Correctly serializes ESP32 AEGIS_NODE_9842 telemetry for server.py backend', () {
+      final sampleBytes = Uint8List.fromList(utf8.encode('{"protocode":"ACKO-2W-TN09-9842"}'));
+      final locationMap = {
+        'status': 'ACQUIRED',
+        'latitude': 12.9716,
+        'longitude': 80.0435,
+      };
+
+      final event = CrashEvent(
+        timestamp: DateTime.parse('2026-09-04T05:30:00.000Z'),
+        deviceName: 'AEGIS_NODE_9842',
+        deviceId: '6E:40:00:01:B5:A3',
+        rawBytes: sampleBytes,
+        location: locationMap,
+        protocode: 'ACKO-2W-TN09-9842',
+        peakShock: 9.84,
+        peakRotation: 318.20,
+      );
+
+      expect(event.riderId, 'TN09-9842');
+      expect(event.effectiveProtocode, 'ACKO-2W-TN09-9842');
+      expect(event.effectivePeakShock, 9.84);
+      expect(event.effectivePeakRotation, 318.20);
+
+      final json = event.toJson();
+      expect(json['rider_id'], 'TN09-9842');
+      expect(json['latitude'], 12.9716);
+      expect(json['longitude'], 80.0435);
+      expect(json['protocode'], 'ACKO-2W-TN09-9842');
+      expect(json['peak_shock'], 9.84);
+      expect(json['peak_rotation'], 318.20);
+      expect(json['kinematics_payload']['peak_g'], 9.84);
+      expect(json['kinematics_payload']['tilt_angle'], 318.20);
+      expect(json['gateway_metadata']['hardware_node'], 'AEGIS_NODE_9842');
+    });
   });
 }

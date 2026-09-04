@@ -71,5 +71,39 @@ void main() {
 
       buffer.dispose();
     });
+
+    test('Correctly reassembles and decodes ESP32 <CRASH_START>...<CRASH_END> 20-byte chunks', () async {
+      final buffer = CrashDataBuffer();
+
+      Uint8List? completedBytes;
+      Map<String, dynamic>? decodedJson;
+
+      buffer.crashEventStream.listen((bytes) {
+        completedBytes = bytes;
+      });
+
+      buffer.parsedCrashStream.listen((json) {
+        decodedJson = json;
+      });
+
+      const frame = '<CRASH_START>\n{"protocode":"ACKO-2W-TN09-9842","timestamp":1725440000,"peak_shock":9.84,"peak_rotation":318.20,"pre_crash":[],"post_crash":[]}\n<CRASH_END>\n';
+      final frameBytes = frame.codeUnits;
+
+      // Stream in 20-byte chunks
+      const mtu = 20;
+      for (int i = 0; i < frameBytes.length; i += mtu) {
+        final end = (i + mtu < frameBytes.length) ? i + mtu : frameBytes.length;
+        buffer.appendChunk(frameBytes.sublist(i, end));
+      }
+
+      expect(completedBytes, isNotNull);
+      expect(decodedJson, isNotNull);
+      expect(decodedJson!['protocode'], 'ACKO-2W-TN09-9842');
+      expect(decodedJson!['peak_shock'], 9.84);
+      expect(decodedJson!['peak_rotation'], 318.20);
+      expect(buffer.currentBytes, 0);
+
+      buffer.dispose();
+    });
   });
 }
